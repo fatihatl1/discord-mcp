@@ -155,6 +155,7 @@ Read:
 | `list_channels` | All channels incl. categories, overwrites decoded              |
 | `list_roles`    | All roles, highest first                                       |
 | `get_bot_info`  | Bot identity, guild count, 10-guild headroom                   |
+| `get_blueprint_template` | Ready-made blueprints for common community types      |
 
 Write:
 
@@ -181,6 +182,27 @@ carrying the Discord error code, message, field details, and an actionable
 hint -- never a thrown exception that kills the process. Every write sends an
 `X-Audit-Log-Reason` header so actions are traceable in the guild's audit
 log.
+
+## Server design layer
+
+The server ships opinionated design knowledge so assistants produce sensible
+layouts instead of inventing conventions per request:
+
+- **Templates** -- `get_blueprint_template` returns a complete starter
+  blueprint for a community type: `gaming`, `dev`, `support`, or `creator`.
+  Call it without arguments to list them. Each follows the conventions
+  below (INFORMATION category first, locked info channels, Admin > Mod >
+  status > Member ladder, private STAFF area, sane @everyone baseline).
+- **Design guide** -- the MCP resource `discord://design-guide`
+  (markdown): category ordering, standard channels, role ladders,
+  permission patterns, guild settings, and the dry-run-first workflow.
+- **Prompt** -- the MCP prompt `design_server` (arguments:
+  `community_type`, `requirements`) bundles the guide plus the matching
+  template into a single message, for clients with prompt support.
+
+Typical flow: assistant lists templates, fetches the closest one, tailors
+names/roles/channels to the request, then runs `apply_blueprint` with
+`dry_run: true` for review before writing.
 
 ## Blueprint format
 

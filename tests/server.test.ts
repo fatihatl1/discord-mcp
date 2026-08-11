@@ -38,6 +38,7 @@ describe("MCP server surface", () => {
         "list_channels",
         "list_roles",
         "get_bot_info",
+        "get_blueprint_template",
         "create_guild",
         "apply_blueprint",
         "create_role",
@@ -176,6 +177,49 @@ describe("MCP server surface", () => {
     expect(isError(res)).toBe(true);
     expect(resultText(res)).toContain("Moderator");
     expect(api.writes).toBe(0);
+  });
+
+  it("serves blueprint templates, the design guide resource, and the design prompt", async () => {
+    const { mcp } = await setup();
+
+    const list = await mcp.callTool({
+      name: "get_blueprint_template",
+      arguments: {},
+    });
+    const listBody = JSON.parse(resultText(list)) as {
+      templates: Array<{ kind: string }>;
+    };
+    expect(listBody.templates.map((t) => t.kind)).toContain("gaming");
+
+    const one = await mcp.callTool({
+      name: "get_blueprint_template",
+      arguments: { kind: "gaming" },
+    });
+    const oneBody = JSON.parse(resultText(one)) as {
+      blueprint: { name: string; categories: Array<{ name: string }> };
+    };
+    expect(oneBody.blueprint.categories[0]?.name).toBe("INFORMATION");
+
+    const bad = await mcp.callTool({
+      name: "get_blueprint_template",
+      arguments: { kind: "nightclub" },
+    });
+    expect(isError(bad)).toBe(true);
+    expect(resultText(bad)).toContain("gaming");
+
+    const resource = await mcp.readResource({ uri: "discord://design-guide" });
+    const guideText = (resource.contents[0] as { text?: string }).text ?? "";
+    expect(guideText).toContain("Role ladder");
+
+    const prompt = await mcp.getPrompt({
+      name: "design_server",
+      arguments: { community_type: "dev", requirements: "small OSS project" },
+    });
+    const promptText =
+      (prompt.messages[0]?.content as { text?: string }).text ?? "";
+    expect(promptText).toContain("design guide");
+    expect(promptText).toContain("Dev Project"); // embedded template
+    expect(promptText).toContain("small OSS project");
   });
 
   it("create_guild builds the full one-request payload from a blueprint", async () => {

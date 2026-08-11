@@ -1,6 +1,6 @@
 {
   "name": "discord-provisioner-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server that provisions Discord servers (guilds, categories, channels, roles, permission overwrites) from a declarative blueprint.",
   "license": "MIT",
   "type": "module",

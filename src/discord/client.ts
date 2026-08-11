@@ -464,7 +464,7 @@ export class DiscordClient {
     const headers: Record<string, string> = {
       Authorization: `Bot ${this.token}`,
       "User-Agent":
-        "DiscordBot (https://github.com/tyfur/discord-provisioner-mcp, 0.1.0)",
+        "DiscordBot (https://github.com/tyfur/discord-provisioner-mcp, 0.2.0)",
     };
     if (opts.body !== undefined) {
       headers["Content-Type"] = "application/json";
