@@ -14,10 +14,8 @@ name: BULLHAUS News Worker
 # Discord-history dedup) is identical for both trigger types.
 on:
   workflow_dispatch: {}
-  # schedule:
-  #   # Uncommented only after a successful manual workflow_dispatch
-  #   # production run and live Discord verification (Phase 3H.5, Part 22).
-  #   - cron: "*/10 * * * *"
+  schedule:
+    - cron: "*/10 * * * *"
 
 permissions:
   contents: read
