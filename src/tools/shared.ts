@@ -7,8 +7,9 @@ import {
   UnknownPermissionError,
   bitfieldToNames,
 } from "../discord/permissions.js";
-import type { APIChannel, APIRole } from "../discord/types.js";
-import { channelTypeName } from "../discord/types.js";
+import { isSnowflake } from "../discord/snowflake.js";
+import type { APIChannel, APIMessage, APIRole, APIWebhook } from "../discord/types.js";
+import { channelTypeName, webhookTypeName } from "../discord/types.js";
 import { log } from "../logging.js";
 
 export interface ToolContext {
@@ -141,4 +142,58 @@ export function publicChannel(
   return out;
 }
 
-export const SNOWFLAKE = /^\d{15,21}$/;
+/**
+ * Message formatted for tool output. Only ever built from fields we know
+ * about on APIMessage -- never a raw passthrough of Discord's response --
+ * so nothing sensitive (e.g. a webhook token) can leak even if a future
+ * Discord response shape adds one.
+ */
+export function publicMessage(message: APIMessage): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    id: message.id,
+    channel_id: message.channel_id,
+    author: {
+      id: message.author.id,
+      username: message.author.username,
+      bot: message.author.bot ?? false,
+    },
+    is_webhook: message.webhook_id !== undefined,
+    pinned: message.pinned,
+    timestamp: message.timestamp,
+    edited_timestamp: message.edited_timestamp ?? null,
+    content: message.content,
+  };
+  if (message.embeds && message.embeds.length > 0) {
+    out["embeds"] = message.embeds.map((embed) => ({
+      type: embed.type ?? null,
+      title: embed.title ?? null,
+      description: embed.description ?? null,
+      url: embed.url ?? null,
+      color: embed.color ?? null,
+      field_count: embed.fields?.length ?? 0,
+    }));
+  }
+  return out;
+}
+
+export { SNOWFLAKE_RE as SNOWFLAKE } from "../discord/snowflake.js";
+
+export { isSnowflake };
+
+/**
+ * Webhook formatted for tool output. Deliberately allow-listed: `token` and
+ * `url` (the bearer credential and the URL that embeds it) are never read
+ * off the input object, so a future Discord response field can't leak one
+ * by accident the way a raw passthrough could.
+ */
+export function publicWebhook(webhook: APIWebhook): Record<string, unknown> {
+  return {
+    id: webhook.id,
+    name: webhook.name,
+    type: webhookTypeName(webhook.type),
+    guild_id: webhook.guild_id ?? null,
+    channel_id: webhook.channel_id,
+    application_id: webhook.application_id ?? null,
+    creator_id: webhook.user?.id ?? null,
+  };
+}

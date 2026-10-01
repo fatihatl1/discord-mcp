@@ -4,8 +4,12 @@ import type {
   ChannelPosition,
   CreateChannelPayload,
   CreateGuildPayload,
+  CreateMessagePayload,
   CreateRolePayload,
+  CreateWebhookPayload,
   DiscordApi,
+  EditMessagePayload,
+  ListMessagesQuery,
   ModifyChannelPayload,
   ModifyRolePayload,
   RolePosition,
@@ -13,16 +17,21 @@ import type {
 import type {
   APIChannel,
   APIGuild,
+  APIMessage,
   APIPartialGuild,
   APIRole,
   APIUser,
+  APIWebhook,
   OverwriteType,
 } from "../src/discord/types.js";
 
 export class FakeApi implements DiscordApi {
   readonly guildId = "100000000000000001";
+  readonly botUserId = "300000000000000001";
   roles: APIRole[];
   channels: APIChannel[] = [];
+  messages: APIMessage[] = [];
+  webhooks: APIWebhook[] = [];
   guildList: APIPartialGuild[] = [
     { id: "100000000000000001", name: "Fake Guild", owner: true },
   ];
@@ -62,7 +71,7 @@ export class FakeApi implements DiscordApi {
 
   async getCurrentUser(): Promise<APIUser> {
     return {
-      id: "300000000000000001",
+      id: this.botUserId,
       username: "fake-bot",
       discriminator: "0",
       bot: true,
@@ -261,6 +270,150 @@ export class FakeApi implements DiscordApi {
   ): Promise<void> {
     this.writes++;
     this.roles = this.roles.filter((r) => r.id !== roleId);
+  }
+
+  async createMessage(
+    channelId: string,
+    payload: CreateMessagePayload,
+  ): Promise<APIMessage> {
+    this.writes++;
+    const message: APIMessage = {
+      id: this.newId(),
+      channel_id: channelId,
+      author: {
+        id: this.botUserId,
+        username: "fake-bot",
+        discriminator: "0",
+        bot: true,
+      },
+      content: payload.content,
+      timestamp: new Date(0).toISOString(),
+      pinned: false,
+      type: 0,
+      ...(payload.flags !== undefined ? { flags: payload.flags } : {}),
+    };
+    this.messages.push(message);
+    return message;
+  }
+
+  async getMessage(channelId: string, messageId: string): Promise<APIMessage> {
+    const message = this.messages.find(
+      (m) => m.id === messageId && m.channel_id === channelId,
+    );
+    if (!message) {
+      throw new Error(`FakeApi: no message ${messageId} in channel ${channelId}`);
+    }
+    return message;
+  }
+
+  async listMessages(
+    channelId: string,
+    query: ListMessagesQuery,
+  ): Promise<APIMessage[]> {
+    let messages = this.messages.filter((m) => m.channel_id === channelId);
+    if (query.before !== undefined) {
+      messages = messages.filter((m) => m.id < (query.before as string));
+    }
+    if (query.after !== undefined) {
+      messages = messages.filter((m) => m.id > (query.after as string));
+    }
+    return [...messages].reverse().slice(0, query.limit);
+  }
+
+  async editMessage(
+    channelId: string,
+    messageId: string,
+    payload: EditMessagePayload,
+  ): Promise<APIMessage> {
+    this.writes++;
+    const message = await this.getMessage(channelId, messageId);
+    message.content = payload.content;
+    message.edited_timestamp = new Date(1).toISOString();
+    return message;
+  }
+
+  async deleteMessage(
+    channelId: string,
+    messageId: string,
+    _reason: string,
+  ): Promise<void> {
+    this.writes++;
+    await this.getMessage(channelId, messageId);
+    this.messages = this.messages.filter((m) => m.id !== messageId);
+  }
+
+  async pinMessage(
+    channelId: string,
+    messageId: string,
+    _reason: string,
+  ): Promise<void> {
+    this.writes++;
+    const message = await this.getMessage(channelId, messageId);
+    message.pinned = true;
+  }
+
+  async unpinMessage(
+    channelId: string,
+    messageId: string,
+    _reason: string,
+  ): Promise<void> {
+    this.writes++;
+    const message = await this.getMessage(channelId, messageId);
+    message.pinned = false;
+  }
+
+  async listGuildWebhooks(guildId: string): Promise<APIWebhook[]> {
+    return this.webhooks.filter((w) => w.guild_id === guildId);
+  }
+
+  async getWebhook(webhookId: string): Promise<APIWebhook> {
+    const webhook = this.webhooks.find((w) => w.id === webhookId);
+    if (!webhook) throw new Error(`FakeApi: no webhook ${webhookId}`);
+    return webhook;
+  }
+
+  /**
+   * Mirrors real Discord: a webhook's guild is implied by its channel, not a
+   * separate parameter. Looks up the channel's own guild_id, falling back to
+   * this fake's default guild when the channel wasn't tracked via
+   * createChannel.
+   */
+  async createWebhook(
+    channelId: string,
+    payload: CreateWebhookPayload,
+    _reason: string,
+  ): Promise<APIWebhook> {
+    this.writes++;
+    const channel = this.channels.find((c) => c.id === channelId);
+    const webhook: APIWebhook = {
+      id: this.newId(),
+      type: 1,
+      guild_id: channel?.guild_id ?? this.guildId,
+      channel_id: channelId,
+      name: payload.name,
+      application_id: null,
+      user: {
+        id: this.botUserId,
+        username: "fake-bot",
+        discriminator: "0",
+        bot: true,
+      },
+      // Present on real incoming webhooks; FakeApi includes them so tests
+      // can assert these NEVER reach tool output.
+      token: "FAKE_WEBHOOK_TOKEN_MUST_NOT_LEAK",
+      url: "https://discord.com/api/webhooks/fake/FAKE_WEBHOOK_TOKEN_MUST_NOT_LEAK",
+    };
+    this.webhooks.push(webhook);
+    return webhook;
+  }
+
+  async deleteWebhook(webhookId: string, _reason: string): Promise<void> {
+    this.writes++;
+    const before = this.webhooks.length;
+    this.webhooks = this.webhooks.filter((w) => w.id !== webhookId);
+    if (this.webhooks.length === before) {
+      throw new Error(`FakeApi: no webhook ${webhookId}`);
+    }
   }
 }
 

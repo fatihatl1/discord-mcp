@@ -4,9 +4,11 @@ import type { DiscordClient } from "./client.js";
 import type {
   APIChannel,
   APIGuild,
+  APIMessage,
   APIPartialGuild,
   APIRole,
   APIUser,
+  APIWebhook,
   OverwriteType,
 } from "./types.js";
 
@@ -55,6 +57,8 @@ export interface ModifyChannelPayload {
   nsfw?: boolean;
   rate_limit_per_user?: number;
   parent_id?: string | null;
+  bitrate?: number;
+  user_limit?: number;
   permission_overwrites?: OverwritePayload[];
 }
 
@@ -63,6 +67,26 @@ export interface ChannelPosition {
   position: number;
   parent_id?: string | null;
   lock_permissions?: boolean;
+}
+
+export interface CreateMessagePayload {
+  content: string;
+  /** Message flag bitfield, e.g. MESSAGE_FLAGS.SUPPRESS_EMBEDS. */
+  flags?: number;
+}
+
+export interface CreateWebhookPayload {
+  name: string;
+}
+
+export interface EditMessagePayload {
+  content: string;
+}
+
+export interface ListMessagesQuery {
+  limit: number;
+  before?: string;
+  after?: string;
 }
 
 /** Role entry in a POST /guilds payload. Ids are integer placeholders. */
@@ -160,6 +184,41 @@ export interface DiscordApi {
   ): Promise<void>;
   deleteChannel(channelId: string, reason: string): Promise<APIChannel>;
   deleteRole(guildId: string, roleId: string, reason: string): Promise<void>;
+  createMessage(
+    channelId: string,
+    payload: CreateMessagePayload,
+  ): Promise<APIMessage>;
+  getMessage(channelId: string, messageId: string): Promise<APIMessage>;
+  listMessages(
+    channelId: string,
+    query: ListMessagesQuery,
+  ): Promise<APIMessage[]>;
+  editMessage(
+    channelId: string,
+    messageId: string,
+    payload: EditMessagePayload,
+  ): Promise<APIMessage>;
+  deleteMessage(
+    channelId: string,
+    messageId: string,
+    reason: string,
+  ): Promise<void>;
+  pinMessage(channelId: string, messageId: string, reason: string): Promise<void>;
+  unpinMessage(
+    channelId: string,
+    messageId: string,
+    reason: string,
+  ): Promise<void>;
+  /** GET /guilds/{id}/webhooks -- every webhook in the guild. */
+  listGuildWebhooks(guildId: string): Promise<APIWebhook[]>;
+  /** GET /webhooks/{id} -- fetch one webhook by id, for identity checks. */
+  getWebhook(webhookId: string): Promise<APIWebhook>;
+  createWebhook(
+    channelId: string,
+    payload: CreateWebhookPayload,
+    reason: string,
+  ): Promise<APIWebhook>;
+  deleteWebhook(webhookId: string, reason: string): Promise<void>;
 }
 
 export class DiscordEndpoints implements DiscordApi {
@@ -320,5 +379,110 @@ export class DiscordEndpoints implements DiscordApi {
       `/guilds/${guildId}/roles/${roleId}`,
       { reason },
     );
+  }
+
+  createMessage(
+    channelId: string,
+    payload: CreateMessagePayload,
+  ): Promise<APIMessage> {
+    return this.client.request<APIMessage>(
+      "POST",
+      `/channels/${channelId}/messages`,
+      { body: payload },
+    );
+  }
+
+  getMessage(channelId: string, messageId: string): Promise<APIMessage> {
+    return this.client.request<APIMessage>(
+      "GET",
+      `/channels/${channelId}/messages/${messageId}`,
+    );
+  }
+
+  listMessages(
+    channelId: string,
+    query: ListMessagesQuery,
+  ): Promise<APIMessage[]> {
+    const q: Record<string, string> = { limit: String(query.limit) };
+    if (query.before) q["before"] = query.before;
+    if (query.after) q["after"] = query.after;
+    return this.client.request<APIMessage[]>(
+      "GET",
+      `/channels/${channelId}/messages`,
+      { query: q },
+    );
+  }
+
+  editMessage(
+    channelId: string,
+    messageId: string,
+    payload: EditMessagePayload,
+  ): Promise<APIMessage> {
+    return this.client.request<APIMessage>(
+      "PATCH",
+      `/channels/${channelId}/messages/${messageId}`,
+      { body: payload },
+    );
+  }
+
+  deleteMessage(
+    channelId: string,
+    messageId: string,
+    reason: string,
+  ): Promise<void> {
+    return this.client.request<void>(
+      "DELETE",
+      `/channels/${channelId}/messages/${messageId}`,
+      { reason },
+    );
+  }
+
+  pinMessage(channelId: string, messageId: string, reason: string): Promise<void> {
+    return this.client.request<void>(
+      "PUT",
+      `/channels/${channelId}/pins/${messageId}`,
+      { reason },
+    );
+  }
+
+  unpinMessage(
+    channelId: string,
+    messageId: string,
+    reason: string,
+  ): Promise<void> {
+    return this.client.request<void>(
+      "DELETE",
+      `/channels/${channelId}/pins/${messageId}`,
+      { reason },
+    );
+  }
+
+  listGuildWebhooks(guildId: string): Promise<APIWebhook[]> {
+    return this.client.request<APIWebhook[]>(
+      "GET",
+      `/guilds/${guildId}/webhooks`,
+    );
+  }
+
+  getWebhook(webhookId: string): Promise<APIWebhook> {
+    return this.client.request<APIWebhook>("GET", `/webhooks/${webhookId}`);
+  }
+
+  createWebhook(
+    channelId: string,
+    payload: CreateWebhookPayload,
+    reason: string,
+  ): Promise<APIWebhook> {
+    return this.client.request<APIWebhook>(
+      "POST",
+      `/channels/${channelId}/webhooks`,
+      { body: payload, reason },
+    );
+  }
+
+  deleteWebhook(webhookId: string, reason: string): Promise<void> {
+    return this.client.request<void>("DELETE", `/webhooks/${webhookId}`, {
+      reason,
+    });
   }
 }

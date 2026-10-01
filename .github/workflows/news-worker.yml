@@ -1,0 +1,68 @@
+name: BULLHAUS News Worker
+
+# Phase 3H.5: production deployment. workflow_dispatch is always available
+# for a manual production run; the scheduled cadence (every 10 minutes) is
+# prepared below as a COMMENTED-OUT schedule trigger until the first manual
+# production run and Discord verification succeed, at which point it is
+# uncommented in a dedicated, separate commit (Phase 3H.5, Part 22).
+#
+# The per-trigger publish cap (Part 10) is encoded directly below rather
+# than requiring an edit between runs: a manually dispatched run always uses
+# NEWS_MAX_POSTS_PER_CHANNEL=1 (controlled validation), a scheduled run
+# always uses 3 (normal production). Every other safety gate (license
+# approval, publish-enabled, dry-run, Finnhub-only, freshness window,
+# Discord-history dedup) is identical for both trigger types.
+on:
+  workflow_dispatch: {}
+  # schedule:
+  #   # Uncommented only after a successful manual workflow_dispatch
+  #   # production run and live Discord verification (Phase 3H.5, Part 22).
+  #   - cron: "*/10 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bullhaus-news-worker
+  # Never cancel a run partway through a publish pass -- an in-flight
+  # createMessage call must be allowed to finish rather than being killed
+  # mid-write by a newer trigger.
+  cancel-in-progress: false
+
+jobs:
+  run-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run News Worker (production -- Finnhub only)
+        env:
+          # Real production credentials, sourced only from GitHub repository
+          # secrets -- never from this file, never from the repo-local .env
+          # (which does not exist on the runner at all).
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          DRY_RUN: "false"
+          NEWS_DRY_RUN: "false"
+          NEWS_PUBLISH_ENABLED: "true"
+          NEWS_LICENSE_APPROVED: "true"
+          NEWS_PROVIDERS: "finnhub"
+          NEWS_MAX_AGE_MINUTES: "60"
+          NEWS_HISTORY_LOOKBACK: "100"
+          # Part 10: workflow_dispatch (manual validation) -> 1 per channel;
+          # schedule (normal production) -> 3 per channel.
+          NEWS_MAX_POSTS_PER_CHANNEL: ${{ github.event_name == 'schedule' && '3' || '1' }}
+        run: npm run news

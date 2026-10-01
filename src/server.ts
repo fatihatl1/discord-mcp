@@ -9,18 +9,28 @@ import { registerApplyBlueprint } from "./tools/apply_blueprint.js";
 import { registerCreateChannel } from "./tools/create_channel.js";
 import { registerCreateGuild } from "./tools/create_guild.js";
 import { registerCreateRole } from "./tools/create_role.js";
+import { registerCreateWebhook } from "./tools/create_webhook.js";
 import { registerDeleteChannel } from "./tools/delete_channel.js";
+import { registerDeleteMessage } from "./tools/delete_message.js";
 import { registerDeleteRole } from "./tools/delete_role.js";
+import { registerDeleteWebhook } from "./tools/delete_webhook.js";
+import { registerEditChannel } from "./tools/edit_channel.js";
+import { registerEditMessage } from "./tools/edit_message.js";
 import { registerGetBlueprintTemplate } from "./tools/get_blueprint_template.js";
 import { registerGetBotInfo } from "./tools/get_bot_info.js";
 import { registerGetGuild } from "./tools/get_guild.js";
 import { registerListChannels } from "./tools/list_channels.js";
 import { registerListGuilds } from "./tools/list_guilds.js";
+import { registerListMessages } from "./tools/list_messages.js";
 import { registerListRoles } from "./tools/list_roles.js";
+import { registerListWebhooks } from "./tools/list_webhooks.js";
+import { registerPinMessage } from "./tools/pin_message.js";
 import { registerReorderChannels } from "./tools/reorder_channels.js";
 import { registerReorderRoles } from "./tools/reorder_roles.js";
+import { registerSendMessage } from "./tools/send_message.js";
 import { registerSetChannelPermissions } from "./tools/set_channel_permissions.js";
 import type { ToolContext } from "./tools/shared.js";
+import { registerUnpinMessage } from "./tools/unpin_message.js";
 
 export const SERVER_NAME = "discord-provisioner-mcp";
 export const SERVER_VERSION = "0.2.0";
@@ -51,9 +61,21 @@ export function buildServer(opts: BuildServerOptions): McpServer {
   // Write - pieces
   registerCreateRole(server, ctx);
   registerCreateChannel(server, ctx);
+  registerEditChannel(server, ctx);
   registerSetChannelPermissions(server, ctx);
   registerReorderChannels(server, ctx);
   registerReorderRoles(server, ctx);
+  // Content - messages
+  registerSendMessage(server, ctx);
+  registerListMessages(server, ctx);
+  registerEditMessage(server, ctx);
+  registerPinMessage(server, ctx);
+  registerUnpinMessage(server, ctx);
+  registerDeleteMessage(server, ctx);
+  // Webhooks - restricted to the configured BULLHAUS guild
+  registerListWebhooks(server, ctx);
+  registerCreateWebhook(server, ctx);
+  registerDeleteWebhook(server, ctx);
   // Destructive - gated
   registerDeleteChannel(server, ctx);
   registerDeleteRole(server, ctx);

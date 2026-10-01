@@ -43,11 +43,21 @@ describe("MCP server surface", () => {
         "apply_blueprint",
         "create_role",
         "create_channel",
+        "edit_channel",
         "set_channel_permissions",
         "reorder_channels",
         "reorder_roles",
+        "send_message",
+        "list_messages",
+        "edit_message",
+        "pin_message",
+        "unpin_message",
+        "delete_message",
         "delete_channel",
         "delete_role",
+        "list_webhooks",
+        "create_webhook",
+        "delete_webhook",
       ].sort(),
     );
   });
@@ -55,7 +65,7 @@ describe("MCP server surface", () => {
   it("marks delete tools as destructive and irreversible in their descriptions", async () => {
     const { mcp } = await setup();
     const { tools } = await mcp.listTools();
-    for (const name of ["delete_channel", "delete_role"]) {
+    for (const name of ["delete_channel", "delete_role", "delete_message", "delete_webhook"]) {
       const tool = tools.find((t) => t.name === name);
       expect(tool?.description?.toUpperCase()).toContain("IRREVERSIBLE");
       expect(tool?.annotations?.destructiveHint).toBe(true);
@@ -234,5 +244,207 @@ describe("MCP server surface", () => {
     expect(payload?.name).toBe("Fresh Server"); // name param wins
     expect(payload?.roles?.[0]?.id).toBe(0); // @everyone placeholder
     expect((payload?.channels ?? []).length).toBe(5); // 2 categories + 3 channels
+  });
+
+  it("edit_channel modifies the existing channel in place, not a replacement", async () => {
+    const { mcp, api } = await setup();
+    const created = await mcp.callTool({
+      name: "create_channel",
+      arguments: { guild_id: api.guildId, name: "general", type: "text" },
+    });
+    const channelId = (
+      JSON.parse(resultText(created)) as { channel: { id: string } }
+    ).channel.id;
+
+    const res = await mcp.callTool({
+      name: "edit_channel",
+      arguments: { channel_id: channelId, topic: "updated topic", nsfw: true },
+    });
+    expect(isError(res)).toBe(false);
+    const body = JSON.parse(resultText(res)) as {
+      channel: { id: string; topic: string; nsfw: boolean };
+    };
+    expect(body.channel.id).toBe(channelId); // same id -- no replacement
+    expect(body.channel.topic).toBe("updated topic");
+    expect(body.channel.nsfw).toBe(true);
+    expect(api.channels).toHaveLength(1);
+  });
+
+  it("edit_channel refuses a call with no fields to change", async () => {
+    const { mcp, api } = await setup();
+    const res = await mcp.callTool({
+      name: "edit_channel",
+      arguments: { channel_id: "500000000000000001" },
+    });
+    expect(isError(res)).toBe(true);
+    expect(api.writes).toBe(0);
+  });
+
+  it("send_message posts content and returns message_id/channel_id/timestamp", async () => {
+    const { mcp, api } = await setup();
+    const res = await mcp.callTool({
+      name: "send_message",
+      arguments: { channel_id: "500000000000000001", content: "hello" },
+    });
+    expect(isError(res)).toBe(false);
+    const body = JSON.parse(resultText(res)) as {
+      message_id: string;
+      channel_id: string;
+      timestamp: string;
+    };
+    expect(body.channel_id).toBe("500000000000000001");
+    expect(body.message_id).toBeTruthy();
+    expect(body.timestamp).toBeTruthy();
+    expect(api.messages).toHaveLength(1);
+  });
+
+  it("list_messages reports author, bot/webhook status, and pin state", async () => {
+    const { mcp, api } = await setup();
+    await mcp.callTool({
+      name: "send_message",
+      arguments: { channel_id: "500000000000000001", content: "hi there" },
+    });
+    const res = await mcp.callTool({
+      name: "list_messages",
+      arguments: { channel_id: "500000000000000001", limit: 10 },
+    });
+    expect(isError(res)).toBe(false);
+    const body = JSON.parse(resultText(res)) as {
+      message_count: number;
+      messages: Array<{
+        content: string;
+        author: { id: string; bot: boolean };
+        is_webhook: boolean;
+        pinned: boolean;
+      }>;
+    };
+    expect(body.message_count).toBe(1);
+    expect(body.messages[0]?.content).toBe("hi there");
+    expect(body.messages[0]?.author.id).toBe(api.botUserId);
+    expect(body.messages[0]?.author.bot).toBe(true);
+    expect(body.messages[0]?.is_webhook).toBe(false);
+    expect(body.messages[0]?.pinned).toBe(false);
+    expect(resultText(res)).not.toContain("token");
+  });
+
+  it("edit_message allows editing a bot-authored message", async () => {
+    const { mcp } = await setup();
+    const sent = await mcp.callTool({
+      name: "send_message",
+      arguments: { channel_id: "500000000000000001", content: "v1" },
+    });
+    const messageId = (
+      JSON.parse(resultText(sent)) as { message_id: string }
+    ).message_id;
+
+    const res = await mcp.callTool({
+      name: "edit_message",
+      arguments: {
+        channel_id: "500000000000000001",
+        message_id: messageId,
+        content: "v2",
+      },
+    });
+    expect(isError(res)).toBe(false);
+    const body = JSON.parse(resultText(res)) as { message: { content: string } };
+    expect(body.message.content).toBe("v2");
+  });
+
+  it("edit_message refuses to edit a message authored by someone else", async () => {
+    const { mcp, api } = await setup();
+    api.messages.push({
+      id: "600000000000000001",
+      channel_id: "500000000000000001",
+      author: { id: "999999999999999999", username: "someone-else", discriminator: "0" },
+      content: "not the bot's message",
+      timestamp: new Date(0).toISOString(),
+      pinned: false,
+      type: 0,
+    });
+
+    const res = await mcp.callTool({
+      name: "edit_message",
+      arguments: {
+        channel_id: "500000000000000001",
+        message_id: "600000000000000001",
+        content: "hijacked",
+      },
+    });
+    expect(isError(res)).toBe(true);
+    expect(resultText(res)).toContain("not authored by this bot");
+    expect(api.messages[0]?.content).toBe("not the bot's message");
+  });
+
+  it("edit_message refuses to edit a webhook message", async () => {
+    const { mcp, api } = await setup();
+    api.messages.push({
+      id: "600000000000000002",
+      channel_id: "500000000000000001",
+      author: { id: api.botUserId, username: "some-webhook", discriminator: "0" },
+      content: "posted via webhook",
+      timestamp: new Date(0).toISOString(),
+      pinned: false,
+      type: 0,
+      webhook_id: "700000000000000001",
+    });
+
+    const res = await mcp.callTool({
+      name: "edit_message",
+      arguments: {
+        channel_id: "500000000000000001",
+        message_id: "600000000000000002",
+        content: "hijacked",
+      },
+    });
+    expect(isError(res)).toBe(true);
+    expect(resultText(res)).toContain("not authored by this bot");
+  });
+
+  it("pin_message and unpin_message toggle pinned state", async () => {
+    const { mcp, api } = await setup();
+    const sent = await mcp.callTool({
+      name: "send_message",
+      arguments: { channel_id: "500000000000000001", content: "pin me" },
+    });
+    const messageId = (
+      JSON.parse(resultText(sent)) as { message_id: string }
+    ).message_id;
+
+    await mcp.callTool({
+      name: "pin_message",
+      arguments: { channel_id: "500000000000000001", message_id: messageId },
+    });
+    expect(api.messages.find((m) => m.id === messageId)?.pinned).toBe(true);
+
+    await mcp.callTool({
+      name: "unpin_message",
+      arguments: { channel_id: "500000000000000001", message_id: messageId },
+    });
+    expect(api.messages.find((m) => m.id === messageId)?.pinned).toBe(false);
+  });
+
+  it("delete_message retrieves and validates the message before deleting it, and never bulk-deletes", async () => {
+    const { mcp, api } = await setup();
+    const sent = await mcp.callTool({
+      name: "send_message",
+      arguments: { channel_id: "500000000000000001", content: "bye" },
+    });
+    const messageId = (
+      JSON.parse(resultText(sent)) as { message_id: string }
+    ).message_id;
+
+    const wrongChannel = await mcp.callTool({
+      name: "delete_message",
+      arguments: { channel_id: "500000000000000002", message_id: messageId },
+    });
+    expect(isError(wrongChannel)).toBe(true);
+    expect(api.messages).toHaveLength(1); // untouched
+
+    const res = await mcp.callTool({
+      name: "delete_message",
+      arguments: { channel_id: "500000000000000001", message_id: messageId },
+    });
+    expect(isError(res)).toBe(false);
+    expect(api.messages).toHaveLength(0);
   });
 });

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixture Feed</title>
+    <item>
+      <title>Unsafe Protocol Item</title>
+      <link>javascript:alert(1)</link>
+      <guid>urn:fixture:unsafe-protocol</guid>
+      <pubDate>Mon, 01 Sep 2025 14:30:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Missing Link Item</title>
+      <guid>urn:fixture:missing-link</guid>
+      <pubDate>Mon, 01 Sep 2025 14:30:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Good Link Item</title>
+      <link>https://example.org/press/good-link</link>
+      <guid>urn:fixture:good-link</guid>
+      <pubDate>Mon, 01 Sep 2025 14:30:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -77,6 +77,76 @@ export const CHANNEL_TYPE = {
   GUILD_MEDIA: 16,
 } as const;
 
+/** Minimal embed metadata surfaced by list_messages -- never the raw embed object. */
+export interface APIEmbed {
+  type?: string;
+  title?: string | null;
+  description?: string | null;
+  url?: string | null;
+  color?: number | null;
+  fields?: Array<{ name: string; value: string; inline?: boolean }>;
+}
+
+export interface APIMessage {
+  id: string;
+  channel_id: string;
+  author: APIUser;
+  content: string;
+  timestamp: string;
+  edited_timestamp?: string | null;
+  pinned: boolean;
+  type: number;
+  /** Present when the message was posted by a webhook rather than a real bot/user. */
+  webhook_id?: string;
+  embeds?: APIEmbed[];
+  flags?: number;
+}
+
+/** Message flag bits this server sets. Full list: Discord docs "Message Object". */
+export const MESSAGE_FLAGS = {
+  SUPPRESS_EMBEDS: 1 << 2,
+} as const;
+
+/** Webhook type: 1 = Incoming, 2 = Channel Follower, 3 = Application-owned. */
+export const WEBHOOK_TYPE = {
+  INCOMING: 1,
+  CHANNEL_FOLLOWER: 2,
+  APPLICATION: 3,
+} as const;
+
+const WEBHOOK_TYPE_NAME_BY_NUM: ReadonlyMap<number, string> = new Map([
+  [WEBHOOK_TYPE.INCOMING, "incoming"],
+  [WEBHOOK_TYPE.CHANNEL_FOLLOWER, "channel_follower"],
+  [WEBHOOK_TYPE.APPLICATION, "application"],
+]);
+
+export function webhookTypeName(type: number): string {
+  return WEBHOOK_TYPE_NAME_BY_NUM.get(type) ?? `type_${type}`;
+}
+
+/**
+ * Raw shape of a Discord webhook object. `token` and `url` are ONLY present
+ * for Incoming webhooks the caller can manage -- they are bearer credentials
+ * (anyone holding them can post as the webhook with no further auth) and
+ * must never leave this file's boundary unsanitized. See publicWebhook in
+ * tools/shared.ts, which is the only place a webhook should be turned into
+ * tool output.
+ */
+export interface APIWebhook {
+  id: string;
+  type: number;
+  guild_id?: string | null;
+  channel_id: string;
+  name: string | null;
+  avatar?: string | null;
+  application_id?: string | null;
+  user?: APIUser;
+  /** Incoming webhook bearer credential. NEVER expose this. */
+  token?: string;
+  /** Full execution URL, which embeds the token. NEVER expose this. */
+  url?: string;
+}
+
 /** Blueprint-facing channel type names mapped to Discord numeric types. */
 export const CHANNEL_TYPE_BY_NAME = {
   text: CHANNEL_TYPE.GUILD_TEXT,

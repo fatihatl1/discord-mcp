@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rss [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<rss version="2.0">
+  <channel>
+    <title>Fixture Feed</title>
+    <item>
+      <title>&xxe;</title>
+      <link>https://example.org/press/xxe</link>
+      <guid>urn:fixture:xxe</guid>
+      <pubDate>Mon, 01 Sep 2025 14:30:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Fixture Atom Feed</title>
+  <entry>
+    <title>Fixture Atom Entry One</title>
+    <link rel="alternate" href="https://example.org/atom/one" />
+    <id>urn:fixture:atom-one</id>
+    <published>2025-09-01T14:30:00Z</published>
+    <summary>Fixture atom summary one.</summary>
+  </entry>
+  <entry>
+    <title>Fixture Atom Entry Two</title>
+    <link rel="alternate" href="https://example.org/atom/two" />
+    <id>urn:fixture:atom-two</id>
+    <updated>2025-09-02T09:00:00Z</updated>
+  </entry>
+</feed>

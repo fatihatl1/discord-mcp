@@ -19,6 +19,8 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
+    "news": "tsx src/news/cli.ts",
+    "news:dry": "tsx src/news/cli.ts --offline",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

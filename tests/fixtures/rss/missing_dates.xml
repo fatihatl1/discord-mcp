@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixture Feed</title>
+    <item>
+      <title>No Date Item</title>
+      <link>https://example.org/press/no-date</link>
+      <guid>urn:fixture:no-date</guid>
+    </item>
+    <item>
+      <title>Bad Date Item</title>
+      <link>https://example.org/press/bad-date</link>
+      <guid>urn:fixture:bad-date</guid>
+      <pubDate>not-a-real-date</pubDate>
+    </item>
+    <item>
+      <title>Good Date Item</title>
+      <link>https://example.org/press/good-date</link>
+      <guid>urn:fixture:good-date</guid>
+      <pubDate>Mon, 01 Sep 2025 14:30:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixture Feed</title>
+    <item>
+      <title>Repeated Item</title>
+      <link>https://example.org/press/repeated</link>
+      <guid>urn:fixture:repeated</guid>
+      <pubDate>Mon, 01 Sep 2025 14:30:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Repeated Item (resent)</title>
+      <link>https://example.org/press/repeated</link>
+      <guid>urn:fixture:repeated</guid>
+      <pubDate>Mon, 01 Sep 2025 14:31:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

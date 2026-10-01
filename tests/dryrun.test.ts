@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
+import { BULLHAUS_GUILD_ID } from "../src/config/bullhaus.js";
 import { DiscordClient, DryRunWriteError } from "../src/discord/client.js";
 import { DiscordEndpoints } from "../src/discord/endpoints.js";
 import { buildServer } from "../src/server.js";
@@ -54,7 +55,35 @@ describe("DRY_RUN end to end through the MCP server", () => {
           ],
         };
       }
-      if (/\/guilds\/\d+\/channels$/.test(call.url)) return { body: [] };
+      if (/\/guilds\/\d+\/channels$/.test(call.url)) {
+        return {
+          body: [{ id: "500000000000000001", type: 0, name: "general" }],
+        };
+      }
+      if (/\/channels\/\d+\/messages\/\d+$/.test(call.url)) {
+        return {
+          body: {
+            id: "600000000000000001",
+            channel_id: "500000000000000001",
+            author: { id: "1", username: "bot", discriminator: "0", bot: true },
+            content: "hi",
+            timestamp: new Date(0).toISOString(),
+            pinned: false,
+            type: 0,
+          },
+        };
+      }
+      if (/\/webhooks\/\d+$/.test(call.url)) {
+        return {
+          body: {
+            id: "800000000000000001",
+            type: 1,
+            guild_id: BULLHAUS_GUILD_ID,
+            channel_id: "500000000000000001",
+            name: "BULLHAUS News",
+          },
+        };
+      }
       return { body: {} };
     });
 
@@ -136,6 +165,70 @@ describe("DRY_RUN end to end through the MCP server", () => {
         arguments: {
           guild_id: GUILD_ID,
           positions: [{ channel_id: "500000000000000001", position: 2 }],
+        },
+      },
+      {
+        name: "edit_channel",
+        arguments: { channel_id: "500000000000000001", topic: "new topic" },
+      },
+      {
+        name: "send_message",
+        arguments: { channel_id: "500000000000000001", content: "hi" },
+      },
+      {
+        name: "send_message",
+        arguments: {
+          channel_id: "500000000000000001",
+          content: "hi, no preview",
+          suppress_embeds: true,
+        },
+      },
+      {
+        name: "create_webhook",
+        arguments: {
+          guild_id: BULLHAUS_GUILD_ID,
+          channel_id: "500000000000000001",
+          name: "BULLHAUS News",
+          confirm_create: true,
+        },
+      },
+      {
+        name: "delete_webhook",
+        arguments: {
+          guild_id: BULLHAUS_GUILD_ID,
+          webhook_id: "800000000000000001",
+          expected_webhook_name: "BULLHAUS News",
+          expected_channel_id: "500000000000000001",
+          confirm_delete: true,
+        },
+      },
+      {
+        name: "edit_message",
+        arguments: {
+          channel_id: "500000000000000001",
+          message_id: "600000000000000001",
+          content: "hi edited",
+        },
+      },
+      {
+        name: "pin_message",
+        arguments: {
+          channel_id: "500000000000000001",
+          message_id: "600000000000000001",
+        },
+      },
+      {
+        name: "unpin_message",
+        arguments: {
+          channel_id: "500000000000000001",
+          message_id: "600000000000000001",
+        },
+      },
+      {
+        name: "delete_message",
+        arguments: {
+          channel_id: "500000000000000001",
+          message_id: "600000000000000001",
         },
       },
       {

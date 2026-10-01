@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixture Feed</title>
+    <link>https://example.org/</link>
+    <description>Test fixture only.</description>
+    <item>
+      <title>Fixture Announcement One &amp; Details</title>
+      <link>https://example.org/press/one</link>
+      <guid isPermaLink="false">urn:fixture:one</guid>
+      <pubDate>Mon, 01 Sep 2025 14:30:00 GMT</pubDate>
+      <description><![CDATA[A short fixture description for item one.]]></description>
+    </item>
+    <item>
+      <title>Fixture Announcement Two</title>
+      <link>https://example.org/press/two</link>
+      <guid isPermaLink="false">urn:fixture:two</guid>
+      <pubDate>Tue, 02 Sep 2025 09:00:00 GMT</pubDate>
+      <description>Plain description for item two.</description>
+    </item>
+  </channel>
+</rss>
