@@ -1,5 +1,6 @@
 /** Test doubles: an in-memory Discord (FakeApi) and a fetch stub. No test touches the network. */
 
+import { DiscordAPIError } from "../src/discord/client.js";
 import type {
   ChannelPosition,
   CreateChannelPayload,
@@ -9,6 +10,7 @@ import type {
   CreateWebhookPayload,
   DiscordApi,
   EditMessagePayload,
+  ListGuildMembersQuery,
   ListMessagesQuery,
   ModifyChannelPayload,
   ModifyRolePayload,
@@ -17,6 +19,7 @@ import type {
 import type {
   APIChannel,
   APIGuild,
+  APIGuildMember,
   APIMessage,
   APIPartialGuild,
   APIRole,
@@ -32,6 +35,20 @@ export class FakeApi implements DiscordApi {
   channels: APIChannel[] = [];
   messages: APIMessage[] = [];
   webhooks: APIWebhook[] = [];
+  /**
+   * Guild members, including the bot's own entry. Defaults to the bot
+   * holding no roles (hierarchy highest position 0) -- tests that need the
+   * bot able to manage roles must push a role into `roles` and reference its
+   * id from this member's `roles` array.
+   */
+  members: APIGuildMember[];
+  /**
+   * Simulates the real Discord behavior (confirmed live) when the
+   * GUILD_MEMBERS privileged intent is off for the bot application:
+   * GET /guilds/{guild}/members is rejected outright (403, code 50001),
+   * not silently answered with an empty list.
+   */
+  guildMembersIntentDisabled = false;
   guildList: APIPartialGuild[] = [
     { id: "100000000000000001", name: "Fake Guild", owner: true },
   ];
@@ -52,6 +69,18 @@ export class FakeApi implements DiscordApi {
         permissions: "0",
         managed: false,
         mentionable: false,
+      },
+    ];
+    this.members = [
+      {
+        user: {
+          id: this.botUserId,
+          username: "fake-bot",
+          discriminator: "0",
+          bot: true,
+        },
+        roles: [],
+        joined_at: new Date(0).toISOString(),
       },
     ];
   }
@@ -99,6 +128,47 @@ export class FakeApi implements DiscordApi {
     return this.roles;
   }
 
+  async getGuildMember(guildId: string, userId: string): Promise<APIGuildMember> {
+    const member = this.members.find((m) => m.user?.id === userId);
+    if (!member) {
+      throw new DiscordAPIError({
+        status: 404,
+        code: 10007,
+        discordMessage: "Unknown Member",
+        details: [],
+        hint: undefined,
+        method: "GET",
+        path: `/guilds/${guildId}/members/${userId}`,
+      });
+    }
+    return member;
+  }
+
+  async listGuildMembers(
+    guildId: string,
+    query: ListGuildMembersQuery,
+  ): Promise<APIGuildMember[]> {
+    if (this.guildMembersIntentDisabled) {
+      throw new DiscordAPIError({
+        status: 403,
+        code: 50001,
+        discordMessage: "Missing Access",
+        details: [],
+        hint: undefined,
+        method: "GET",
+        path: `/guilds/${guildId}/members`,
+      });
+    }
+    let members = [...this.members].sort((a, b) =>
+      (a.user?.id ?? "").localeCompare(b.user?.id ?? ""),
+    );
+    if (query.after !== undefined) {
+      const after = query.after;
+      members = members.filter((m) => (m.user?.id ?? "") > after);
+    }
+    return members.slice(0, query.limit);
+  }
+
   async createGuild(payload: CreateGuildPayload): Promise<APIGuild> {
     this.writes++;
     this.createdGuildPayloads.push(payload);
@@ -126,14 +196,27 @@ export class FakeApi implements DiscordApi {
   }
 
   async modifyRole(
-    _guildId: string,
+    guildId: string,
     roleId: string,
     payload: ModifyRolePayload,
     _reason: string,
   ): Promise<APIRole> {
-    this.writes++;
     const role = this.roles.find((r) => r.id === roleId);
     if (!role) throw new Error(`FakeApi: no role ${roleId}`);
+    if (role.managed) {
+      // Mirrors real Discord: PATCHing an integration-managed role is
+      // rejected server-side regardless of hierarchy.
+      throw new DiscordAPIError({
+        status: 403,
+        code: 50013,
+        discordMessage: "Missing Permissions",
+        details: [],
+        hint: undefined,
+        method: "PATCH",
+        path: `/guilds/${guildId}/roles/${roleId}`,
+      });
+    }
+    this.writes++;
     if (payload.name !== undefined) role.name = payload.name;
     if (payload.color !== undefined) role.color = payload.color;
     if (payload.hoist !== undefined) role.hoist = payload.hoist;

@@ -58,6 +58,13 @@ describe("MCP server surface", () => {
         "list_webhooks",
         "create_webhook",
         "delete_webhook",
+        "get_role",
+        "edit_role_permissions",
+        "edit_role",
+        "edit_role_position",
+        "get_member",
+        "list_role_members",
+        "get_effective_permissions",
       ].sort(),
     );
   });

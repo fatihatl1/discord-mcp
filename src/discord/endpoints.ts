@@ -4,6 +4,7 @@ import type { DiscordClient } from "./client.js";
 import type {
   APIChannel,
   APIGuild,
+  APIGuildMember,
   APIMessage,
   APIPartialGuild,
   APIRole,
@@ -89,6 +90,11 @@ export interface ListMessagesQuery {
   after?: string;
 }
 
+export interface ListGuildMembersQuery {
+  limit: number;
+  after?: string;
+}
+
 /** Role entry in a POST /guilds payload. Ids are integer placeholders. */
 export interface GuildCreateRole {
   id: number;
@@ -139,6 +145,19 @@ export interface DiscordApi {
   getGuild(guildId: string): Promise<APIGuild>;
   listGuildChannels(guildId: string): Promise<APIChannel[]>;
   listGuildRoles(guildId: string): Promise<APIRole[]>;
+  /** GET /guilds/{guild.id}/members/{user.id} -- unprivileged; no special intent needed. */
+  getGuildMember(guildId: string, userId: string): Promise<APIGuildMember>;
+  /**
+   * GET /guilds/{guild.id}/members -- requires the GUILD_MEMBERS privileged
+   * intent to be enabled for the application in the Discord developer portal
+   * (Bot tab), even though this server only ever calls REST and never opens
+   * a Gateway connection. Without it Discord returns an empty list rather
+   * than an error. See README "Member listing and the privileged intent".
+   */
+  listGuildMembers(
+    guildId: string,
+    query: ListGuildMembersQuery,
+  ): Promise<APIGuildMember[]>;
   createGuild(payload: CreateGuildPayload): Promise<APIGuild>;
   createRole(
     guildId: string,
@@ -264,6 +283,26 @@ export class DiscordEndpoints implements DiscordApi {
 
   listGuildRoles(guildId: string): Promise<APIRole[]> {
     return this.client.request<APIRole[]>("GET", `/guilds/${guildId}/roles`);
+  }
+
+  getGuildMember(guildId: string, userId: string): Promise<APIGuildMember> {
+    return this.client.request<APIGuildMember>(
+      "GET",
+      `/guilds/${guildId}/members/${userId}`,
+    );
+  }
+
+  listGuildMembers(
+    guildId: string,
+    query: ListGuildMembersQuery,
+  ): Promise<APIGuildMember[]> {
+    const q: Record<string, string> = { limit: String(query.limit) };
+    if (query.after) q["after"] = query.after;
+    return this.client.request<APIGuildMember[]>(
+      "GET",
+      `/guilds/${guildId}/members`,
+      { query: q },
+    );
   }
 
   createGuild(payload: CreateGuildPayload): Promise<APIGuild> {

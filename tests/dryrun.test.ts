@@ -52,7 +52,36 @@ describe("DRY_RUN end to end through the MCP server", () => {
               managed: false,
               mentionable: false,
             },
+            {
+              id: "400000000000000001",
+              name: "Mod",
+              color: 0,
+              hoist: false,
+              position: 1,
+              permissions: "0",
+              managed: false,
+              mentionable: false,
+            },
+            {
+              id: "450000000000000001",
+              name: "BULLHAUS AI",
+              color: 0,
+              hoist: false,
+              position: 2,
+              permissions: "0",
+              managed: true,
+              mentionable: false,
+            },
           ],
+        };
+      }
+      if (/\/guilds\/\d+\/members\/\d+$/.test(call.url)) {
+        return {
+          body: {
+            user: { id: "1", username: "bot", discriminator: "0", bot: true },
+            roles: ["450000000000000001"],
+            joined_at: new Date(0).toISOString(),
+          },
         };
       }
       if (/\/guilds\/\d+\/channels$/.test(call.url)) {
@@ -241,6 +270,30 @@ describe("DRY_RUN end to end through the MCP server", () => {
           guild_id: GUILD_ID,
           role_id: "400000000000000001",
           confirm: true,
+        },
+      },
+      {
+        name: "edit_role_permissions",
+        arguments: {
+          guild_id: GUILD_ID,
+          role_id: "400000000000000001",
+          add_permissions: ["KICK_MEMBERS"],
+        },
+      },
+      {
+        name: "edit_role",
+        arguments: {
+          guild_id: GUILD_ID,
+          role_id: "400000000000000001",
+          name: "Renamed Mod",
+        },
+      },
+      {
+        name: "edit_role_position",
+        arguments: {
+          guild_id: GUILD_ID,
+          role_id: "400000000000000001",
+          position: 2,
         },
       },
     ];

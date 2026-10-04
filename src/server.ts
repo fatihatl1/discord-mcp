@@ -16,12 +16,19 @@ import { registerDeleteRole } from "./tools/delete_role.js";
 import { registerDeleteWebhook } from "./tools/delete_webhook.js";
 import { registerEditChannel } from "./tools/edit_channel.js";
 import { registerEditMessage } from "./tools/edit_message.js";
+import { registerEditRole } from "./tools/edit_role.js";
+import { registerEditRolePermissions } from "./tools/edit_role_permissions.js";
+import { registerEditRolePosition } from "./tools/edit_role_position.js";
 import { registerGetBlueprintTemplate } from "./tools/get_blueprint_template.js";
 import { registerGetBotInfo } from "./tools/get_bot_info.js";
+import { registerGetEffectivePermissions } from "./tools/get_effective_permissions.js";
 import { registerGetGuild } from "./tools/get_guild.js";
+import { registerGetMember } from "./tools/get_member.js";
+import { registerGetRole } from "./tools/get_role.js";
 import { registerListChannels } from "./tools/list_channels.js";
 import { registerListGuilds } from "./tools/list_guilds.js";
 import { registerListMessages } from "./tools/list_messages.js";
+import { registerListRoleMembers } from "./tools/list_role_members.js";
 import { registerListRoles } from "./tools/list_roles.js";
 import { registerListWebhooks } from "./tools/list_webhooks.js";
 import { registerPinMessage } from "./tools/pin_message.js";
@@ -79,6 +86,14 @@ export function buildServer(opts: BuildServerOptions): McpServer {
   // Destructive - gated
   registerDeleteChannel(server, ctx);
   registerDeleteRole(server, ctx);
+  // Roles & members - direct by-id tooling (hierarchy/self-role/managed-role safe)
+  registerGetRole(server, ctx);
+  registerEditRolePermissions(server, ctx);
+  registerEditRole(server, ctx);
+  registerEditRolePosition(server, ctx);
+  registerGetMember(server, ctx);
+  registerListRoleMembers(server, ctx);
+  registerGetEffectivePermissions(server, ctx);
 
   // Design knowledge: the guide as a readable resource, plus a prompt that
   // packages guide + template into one designing flow.

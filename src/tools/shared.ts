@@ -8,7 +8,13 @@ import {
   bitfieldToNames,
 } from "../discord/permissions.js";
 import { isSnowflake } from "../discord/snowflake.js";
-import type { APIChannel, APIMessage, APIRole, APIWebhook } from "../discord/types.js";
+import type {
+  APIChannel,
+  APIGuildMember,
+  APIMessage,
+  APIRole,
+  APIWebhook,
+} from "../discord/types.js";
 import { channelTypeName, webhookTypeName } from "../discord/types.js";
 import { log } from "../logging.js";
 
@@ -16,6 +22,25 @@ export interface ToolContext {
   api: DiscordApi;
   /** When true (DRY_RUN env), write tools describe instead of act. */
   dryRun: boolean;
+}
+
+/**
+ * Structured safety-boundary errors raised by role/member tools: hierarchy
+ * violations, self-role protection, not-found lookups that have no single
+ * Discord REST endpoint of their own, and Discord's own rejection of a
+ * managed-role edit. `code` becomes `error.type` in the tool's JSON output,
+ * so callers can branch on it without parsing prose.
+ */
+export class ToolSafetyError extends Error {
+  readonly code: string;
+  readonly extra: Record<string, unknown> | undefined;
+
+  constructor(code: string, message: string, extra?: Record<string, unknown>) {
+    super(message);
+    this.name = "ToolSafetyError";
+    this.code = code;
+    this.extra = extra;
+  }
 }
 
 export interface ToolTextResult {
@@ -56,6 +81,8 @@ export function errorResult(err: unknown): ToolTextResult {
     payload = { type: "unknown_permission_error", message: err.message };
   } else if (err instanceof DryRunWriteError) {
     payload = { type: "dry_run_blocked", message: err.message };
+  } else if (err instanceof ToolSafetyError) {
+    payload = { type: err.code, message: err.message, ...(err.extra ?? {}) };
   } else {
     payload = {
       type: "error",
@@ -97,7 +124,7 @@ export async function runTool(
 
 /** Role formatted for tool output: bitfield decoded to permission names. */
 export function publicRole(role: APIRole): Record<string, unknown> {
-  return {
+  const out: Record<string, unknown> = {
     id: role.id,
     name: role.name,
     color: `#${role.color.toString(16).padStart(6, "0")}`,
@@ -107,6 +134,33 @@ export function publicRole(role: APIRole): Record<string, unknown> {
     managed: role.managed,
     permissions: bitfieldToNames(role.permissions),
   };
+  if (role.tags) out["tags"] = role.tags;
+  return out;
+}
+
+/**
+ * Member formatted for tool output. `role_names` is resolved by the caller
+ * (a member object alone only carries role ids) and omitted when not given.
+ */
+export function publicMember(
+  member: APIGuildMember,
+  roleNameById?: ReadonlyMap<string, string>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    id: member.user?.id ?? null,
+    username: member.user?.username ?? null,
+    global_name: member.user?.global_name ?? null,
+    nickname: member.nick ?? null,
+    bot: member.user?.bot ?? false,
+    joined_at: member.joined_at,
+    role_ids: member.roles,
+  };
+  if (roleNameById) {
+    out["role_names"] = member.roles.map(
+      (id) => roleNameById.get(id) ?? `unknown_role_${id}`,
+    );
+  }
+  return out;
 }
 
 /** Channel formatted for tool output. */

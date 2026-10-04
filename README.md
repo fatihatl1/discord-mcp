@@ -157,6 +157,10 @@ Read:
 | `get_bot_info`  | Bot identity, guild count, 10-guild headroom                   |
 | `get_blueprint_template` | Ready-made blueprints for common community types      |
 | `list_messages`  | Recent messages in a channel; author, bot/webhook status, embeds |
+| `get_role`       | One role by id: position, color, managed, decoded permissions, tags |
+| `get_member`     | One guild member by user id: roles (ids + resolved names), nickname, bot flag |
+| `list_role_members` | Every member carrying a given role (needs the privileged GUILD_MEMBERS intent -- see below) |
+| `get_effective_permissions` | Computed server + channel permissions for a real member or a hypothetical role set, with a reasoning trace |
 
 Write:
 
@@ -176,6 +180,9 @@ Write:
 | `unpin_message`           | Unpin a message                                                   |
 | `list_webhooks`           | List sanitized webhook metadata for the BULLHAUS guild            |
 | `create_webhook`          | Create an incoming webhook on a BULLHAUS-guild channel            |
+| `edit_role_permissions`   | PATCH an existing role's permission bitfield in place by id (exact or incremental), with hierarchy/self-role/Administrator safety gates |
+| `edit_role`               | PATCH an existing role's name/color/hoist/mentionable in place by id |
+| `edit_role_position`      | PATCH a single role's position in place by id                     |
 
 Destructive (gated -- `delete_channel`/`delete_role`/`delete_webhook` require
 `confirm`/`confirm_delete: true` and say so in their descriptions; there is
@@ -194,6 +201,76 @@ carrying the Discord error code, message, field details, and an actionable
 hint -- never a thrown exception that kills the process. Every write sends an
 `X-Audit-Log-Reason` header so actions are traceable in the guild's audit
 log.
+
+## Direct role and member tooling
+
+`apply_blueprint` diffs a whole blueprint against live state and is not
+meant for one-off edits to an existing role -- a dry run against a guild with
+managed/integration roles already present can misread one as a role the
+blueprint doesn't know about. `get_role`, `edit_role`, `edit_role_permissions`,
+`edit_role_position`, `get_member`, `list_role_members`, and
+`get_effective_permissions` operate on explicit `role_id`/`user_id` values
+instead, PATCHing an existing role in place and never creating a replacement.
+
+**dry_run defaults to true** on every one of these mutation tools (stricter
+than the older write tools, which rely solely on the `DRY_RUN` env var). A
+dry run returns a before/requested-change/after preview and sends zero
+requests to Discord; the env `DRY_RUN=true` still forces a dry run even when
+a caller passes `dry_run: false` (`forced_by_env` in the response says so).
+
+**Administrator safety.** `edit_role_permissions` never silently grants
+`ADMINISTRATOR`: adding it requires `allow_administrator: true` on the same
+call, or the tool refuses with `ADMINISTRATOR_OPT_IN_REQUIRED`. Removing it
+needs no such flag.
+
+**Role hierarchy.** Before any of the three mutation tools write, the bot
+looks up its own highest role (via `get_member` on itself) and refuses to
+touch a role at or above that position with `ROLE_HIERARCHY_BLOCKED` --
+checked up front, including during a dry-run preview, so the preview never
+shows an outcome Discord would reject anyway. This also covers `@everyone`
+(always position 0) and `edit_role_position`'s target.
+
+**Self-role protection.** The bot will never edit its own managed
+integration role (the one Discord auto-creates for a bot application),
+regardless of hierarchy: that specific case returns `SELF_ROLE_EDIT_BLOCKED`.
+This is an intentional boundary, not a bug -- it is not worked around.
+
+**Managed (integration) roles in general.** A managed role that is *not* the
+bot's own (e.g. a linked-role or another bot's role) is not pre-emptively
+blocked -- hierarchy and dry-run previews work on it normally, since Discord,
+not this server, is the authority on which managed roles can be edited. If
+the real PATCH is rejected because the role is integration-managed, the
+error comes back as `DISCORD_REJECTED_MANAGED_ROLE_EDIT` carrying Discord's
+actual status/code/message -- never papered over with a fallback role
+creation or a silent no-op.
+
+**Member listing and the privileged intent.** `get_member` (fetching one
+member by id) needs nothing beyond normal bot permissions and was confirmed
+live against the real BULLHAUS guild. `list_role_members` (and the
+underlying `GET /guilds/{guild}/members` endpoint) requires the
+**GUILD_MEMBERS privileged intent** to be enabled for the application in the
+Discord developer portal (Bot tab) -- a REST-only server like this one never
+opens a Gateway connection, but Discord still gates that endpoint behind the
+same application-level toggle used for the Gateway intent. Confirmed live
+against the real BULLHAUS guild: without the intent enabled, Discord does
+**not** silently return an empty list -- it rejects the request outright
+(`403`, code `50001` "Missing Access"). `list_role_members` surfaces this as
+a structured `GUILD_MEMBERS_INTENT_REQUIRED` error rather than the generic
+"bot can't see this channel" hint that error code would otherwise carry.
+This server does not and cannot flip that toggle for you, since it's an
+application setting in the developer portal, not something configurable at
+runtime -- enable Server Members Intent there if you need this tool.
+
+**get_effective_permissions** computes Discord's actual documented
+precedence (not an approximation): `@everyone` base, OR'd with held roles,
+short-circuited to every permission when `ADMINISTRATOR` is present; for a
+channel, the parent category's overwrites are applied as one layer and the
+channel's own overwrites as a second layer on top, each layer resolving
+`@everyone` deny-then-allow, then the union of all applicable role
+deny/allow, then (for a real member) a member-specific overwrite. It accepts
+either a real `user_id` or a hypothetical `role_ids` set (for "what would a
+Member/VIP-type role combination see" questions), and returns the
+contributing roles plus a step-by-step reasoning trace.
 
 ## Server design layer
 

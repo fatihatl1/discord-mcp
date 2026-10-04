@@ -8,6 +8,21 @@ export interface APIUser {
   bot?: boolean;
 }
 
+/**
+ * Present on roles Discord manages on behalf of an integration (a bot's own
+ * auto-created role, a boost role, a linked role, etc). Absent on ordinary
+ * roles.
+ */
+export interface APIRoleTags {
+  bot_id?: string;
+  integration_id?: string;
+  /** Present (as null) on the server booster role. */
+  premium_subscriber?: null;
+  subscription_listing_id?: string;
+  available_for_purchase?: null;
+  guild_connections?: null;
+}
+
 export interface APIRole {
   id: string;
   name: string;
@@ -18,6 +33,17 @@ export interface APIRole {
   permissions: string;
   managed: boolean;
   mentionable: boolean;
+  tags?: APIRoleTags;
+}
+
+/** Shape returned by GET /guilds/{id}/members and /guilds/{id}/members/{user.id}. */
+export interface APIGuildMember {
+  user?: APIUser;
+  nick?: string | null;
+  /** Role ids the member holds. Never includes the @everyone role (its id is the guild id). */
+  roles: string[];
+  joined_at: string;
+  pending?: boolean;
 }
 
 /** Permission overwrite target type: 0 = role, 1 = member. */

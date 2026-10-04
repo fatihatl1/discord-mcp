@@ -67,6 +67,12 @@ export const PERMISSIONS = Object.freeze({
 
 export type PermissionName = keyof typeof PERMISSIONS;
 
+/** Union of every documented permission bit -- what ADMINISTRATOR resolves to. */
+export const ALL_PERMISSIONS_BITS: bigint = Object.values(PERMISSIONS).reduce(
+  (acc, bit) => acc | bit,
+  0n,
+);
+
 /** All valid permission names, ordered by bit position. */
 export const PERMISSION_NAMES: readonly PermissionName[] = Object.freeze(
   (Object.keys(PERMISSIONS) as PermissionName[]).sort((a, b) =>
