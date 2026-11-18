@@ -1,0 +1,63 @@
+name: BULLHAUS Community Role Sync
+
+# Phase 5: keeps the internal Access-* roles in step with
+# "Member + cohort role" (see src/community/role_sync.ts).
+#
+# Deliberately a SEPARATE workflow from the Finnhub News Worker: the two have
+# different cadences, different failure modes and different blast radii, and
+# combining them would mean a News outage could silently stop community
+# gating (or the reverse). They share only the DISCORD_BOT_TOKEN secret.
+#
+# The scheduled trigger starts COMMENTED OUT, matching the News Worker's
+# rollout pattern: workflow_dispatch is used first for a live dry run and
+# then for one controlled live run, and the cron line is uncommented in its
+# own commit only once both have been verified (Phase 5, Section 50).
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Plan only, write nothing to Discord"
+        type: boolean
+        default: true
+  # schedule:
+  #   - cron: "*/5 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bullhaus-community-role-sync
+  # Never cancel a pass partway through: an in-flight role write must be
+  # allowed to finish rather than being killed by a newer trigger.
+  cancel-in-progress: false
+
+jobs:
+  role-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run community role sync
+        env:
+          # Production credential, sourced only from GitHub repository
+          # secrets. The repo-local .env does not exist on the runner.
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          # A scheduled pass always writes. A manual pass writes only when
+          # the dispatcher explicitly unticks dry_run. Both switches must
+          # read exactly "false" or src/community/cli.ts stays read-only.
+          DRY_RUN: ${{ (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') && 'false' || 'true' }}
+          ROLE_SYNC_DRY_RUN: ${{ (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') && 'false' || 'true' }}
+        run: npm run role-sync

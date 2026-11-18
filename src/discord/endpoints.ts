@@ -5,6 +5,7 @@ import type {
   APIChannel,
   APIGuild,
   APIGuildMember,
+  APIInvite,
   APIMessage,
   APIPartialGuild,
   APIRole,
@@ -95,6 +96,24 @@ export interface ListGuildMembersQuery {
   after?: string;
 }
 
+/**
+ * POST /channels/{channel.id}/invites.
+ *
+ * `role_ids` asks Discord to grant those roles to whoever joins through the
+ * invite. It is sent only when explicitly supplied; Discord rejects the
+ * whole request if it does not accept the field, which is the signal the
+ * caller needs rather than something to paper over.
+ */
+export interface CreateInvitePayload {
+  /** Seconds until expiry; 0 means never. */
+  max_age?: number;
+  /** Max uses; 0 means unlimited. */
+  max_uses?: number;
+  temporary?: boolean;
+  unique?: boolean;
+  role_ids?: string[];
+}
+
 /** Role entry in a POST /guilds payload. Ids are integer placeholders. */
 export interface GuildCreateRole {
   id: number;
@@ -158,6 +177,33 @@ export interface DiscordApi {
     guildId: string,
     query: ListGuildMembersQuery,
   ): Promise<APIGuildMember[]>;
+  /**
+   * PUT /guilds/{guild.id}/members/{user.id}/roles/{role.id} -- needs
+   * MANAGE_ROLES, and the target role must sit strictly below the bot's
+   * highest role. Idempotent server-side: adding a role the member already
+   * holds succeeds and changes nothing.
+   */
+  addMemberRole(
+    guildId: string,
+    userId: string,
+    roleId: string,
+    reason: string,
+  ): Promise<void>;
+  /** DELETE of the same route; equally idempotent. */
+  removeMemberRole(
+    guildId: string,
+    userId: string,
+    roleId: string,
+    reason: string,
+  ): Promise<void>;
+  /** POST /channels/{channel.id}/invites -- needs CREATE_INSTANT_INVITE. */
+  createChannelInvite(
+    channelId: string,
+    payload: CreateInvitePayload,
+    reason: string,
+  ): Promise<APIInvite>;
+  /** GET /guilds/{guild.id}/invites -- needs MANAGE_GUILD. */
+  listGuildInvites(guildId: string): Promise<APIInvite[]>;
   createGuild(payload: CreateGuildPayload): Promise<APIGuild>;
   createRole(
     guildId: string,
@@ -303,6 +349,48 @@ export class DiscordEndpoints implements DiscordApi {
       `/guilds/${guildId}/members`,
       { query: q },
     );
+  }
+
+  addMemberRole(
+    guildId: string,
+    userId: string,
+    roleId: string,
+    reason: string,
+  ): Promise<void> {
+    return this.client.request<void>(
+      "PUT",
+      `/guilds/${guildId}/members/${userId}/roles/${roleId}`,
+      { reason },
+    );
+  }
+
+  removeMemberRole(
+    guildId: string,
+    userId: string,
+    roleId: string,
+    reason: string,
+  ): Promise<void> {
+    return this.client.request<void>(
+      "DELETE",
+      `/guilds/${guildId}/members/${userId}/roles/${roleId}`,
+      { reason },
+    );
+  }
+
+  createChannelInvite(
+    channelId: string,
+    payload: CreateInvitePayload,
+    reason: string,
+  ): Promise<APIInvite> {
+    return this.client.request<APIInvite>(
+      "POST",
+      `/channels/${channelId}/invites`,
+      { body: payload, reason },
+    );
+  }
+
+  listGuildInvites(guildId: string): Promise<APIInvite[]> {
+    return this.client.request<APIInvite[]>("GET", `/guilds/${guildId}/invites`);
   }
 
   createGuild(payload: CreateGuildPayload): Promise<APIGuild> {

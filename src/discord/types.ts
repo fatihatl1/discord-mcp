@@ -173,6 +173,28 @@ export interface APIWebhook {
   url?: string;
 }
 
+/**
+ * Invite object as returned by POST /channels/{id}/invites.
+ *
+ * `code` is the whole secret: anyone holding it can join the guild, so it is
+ * treated like a credential -- never logged, never written to a tracked file.
+ * `role_ids` echoes back the roles Discord will grant on join, and is absent
+ * when the API ignored or did not support the request field.
+ */
+export interface APIInvite {
+  code: string;
+  channel?: { id: string; name?: string | null; type?: number } | null;
+  guild?: { id: string; name?: string } | null;
+  inviter?: APIUser;
+  max_age?: number;
+  max_uses?: number;
+  temporary?: boolean;
+  uses?: number;
+  created_at?: string;
+  expires_at?: string | null;
+  role_ids?: string[];
+}
+
 /** Blueprint-facing channel type names mapped to Discord numeric types. */
 export const CHANNEL_TYPE_BY_NAME = {
   text: CHANNEL_TYPE.GUILD_TEXT,

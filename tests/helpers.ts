@@ -5,6 +5,7 @@ import type {
   ChannelPosition,
   CreateChannelPayload,
   CreateGuildPayload,
+  CreateInvitePayload,
   CreateMessagePayload,
   CreateRolePayload,
   CreateWebhookPayload,
@@ -20,6 +21,7 @@ import type {
   APIChannel,
   APIGuild,
   APIGuildMember,
+  APIInvite,
   APIMessage,
   APIPartialGuild,
   APIRole,
@@ -167,6 +169,95 @@ export class FakeApi implements DiscordApi {
       members = members.filter((m) => (m.user?.id ?? "") > after);
     }
     return members.slice(0, query.limit);
+  }
+
+  /**
+   * Every member-role mutation, in order, so a test can assert both WHAT was
+   * written and that a dry-run wrote nothing at all.
+   */
+  memberRoleWrites: Array<{
+    kind: "add" | "remove";
+    userId: string;
+    roleId: string;
+    reason: string;
+  }> = [];
+  /** Set to make the next member-role write throw, to exercise fail-safe paths. */
+  failMemberRoleWriteFor: { userId: string; roleId: string } | null = null;
+
+  private memberRoleWrite(
+    kind: "add" | "remove",
+    guildId: string,
+    userId: string,
+    roleId: string,
+    reason: string,
+  ): void {
+    if (
+      this.failMemberRoleWriteFor &&
+      this.failMemberRoleWriteFor.userId === userId &&
+      this.failMemberRoleWriteFor.roleId === roleId
+    ) {
+      throw new DiscordAPIError({
+        status: 403,
+        code: 50013,
+        discordMessage: "Missing Permissions",
+        details: [],
+        hint: undefined,
+        method: kind === "add" ? "PUT" : "DELETE",
+        path: `/guilds/${guildId}/members/${userId}/roles/${roleId}`,
+      });
+    }
+    this.writes++;
+    this.memberRoleWrites.push({ kind, userId, roleId, reason });
+    const member = this.members.find((m) => m.user?.id === userId);
+    if (!member) return;
+    // Mirror Discord: both directions are idempotent.
+    if (kind === "add") {
+      if (!member.roles.includes(roleId)) member.roles.push(roleId);
+    } else {
+      member.roles = member.roles.filter((r) => r !== roleId);
+    }
+  }
+
+  async addMemberRole(
+    guildId: string,
+    userId: string,
+    roleId: string,
+    reason: string,
+  ): Promise<void> {
+    this.memberRoleWrite("add", guildId, userId, roleId, reason);
+  }
+
+  async removeMemberRole(
+    guildId: string,
+    userId: string,
+    roleId: string,
+    reason: string,
+  ): Promise<void> {
+    this.memberRoleWrite("remove", guildId, userId, roleId, reason);
+  }
+
+  async createChannelInvite(
+    channelId: string,
+    payload: CreateInvitePayload,
+    _reason: string,
+  ): Promise<APIInvite> {
+    this.writes++;
+    const invite: APIInvite = {
+      code: `fakeinv${this.newId().slice(-6)}`,
+      channel: { id: channelId },
+      max_age: payload.max_age ?? 0,
+      max_uses: payload.max_uses ?? 0,
+      uses: 0,
+    };
+    if (payload.role_ids) invite.role_ids = [...payload.role_ids];
+    this.invites.push(invite);
+    return invite;
+  }
+
+  invites: APIInvite[] = [];
+
+  async listGuildInvites(_guildId: string): Promise<APIInvite[]> {
+    return this.invites;
   }
 
   async createGuild(payload: CreateGuildPayload): Promise<APIGuild> {
