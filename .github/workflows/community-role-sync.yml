@@ -8,10 +8,9 @@ name: BULLHAUS Community Role Sync
 # combining them would mean a News outage could silently stop community
 # gating (or the reverse). They share only the DISCORD_BOT_TOKEN secret.
 #
-# The scheduled trigger starts COMMENTED OUT, matching the News Worker's
-# rollout pattern: workflow_dispatch is used first for a live dry run and
-# then for one controlled live run, and the cron line is uncommented in its
-# own commit only once both have been verified (Phase 5, Section 50).
+# Rollout followed the News Worker's pattern (Phase 5, Section 50): a live
+# dry run via workflow_dispatch, then one controlled live run, and only then
+# the scheduled trigger below, enabled in its own commit.
 on:
   workflow_dispatch:
     inputs:
@@ -19,8 +18,8 @@ on:
         description: "Plan only, write nothing to Discord"
         type: boolean
         default: true
-  # schedule:
-  #   - cron: "*/5 * * * *"
+  schedule:
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: read
