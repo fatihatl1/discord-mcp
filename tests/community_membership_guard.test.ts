@@ -1,10 +1,15 @@
 /**
- * Phase 5.1 -- tests for the community membership guard.
+ * Phase 5.2 -- tests for the community membership guard.
  *
- * The guard is READ-ONLY (Section 13: an automatic corrector for this rule
- * is "destructive behavior" and is not deployed). Every case here runs
- * against plain in-memory data; nothing touches the network, and there is
- * no executor to test because there is nothing to write.
+ * The guard is READ-ONLY (Section 13/Phase 5.1, Section 12/Phase 5.2: an
+ * automatic corrector for this rule is "destructive behavior" and is not
+ * deployed). Every case here runs against plain in-memory data; nothing
+ * touches the network, and there is no executor to test because there is
+ * nothing to write.
+ *
+ * Phase 5.2 moved TRADING and GAMING into the gated set (they became access
+ * roles with real community visibility) and moved INNERCIRCLE out of it
+ * (it became a pure cosmetic badge, alongside VIP).
  */
 
 import { describe, expect, it } from "vitest";
@@ -97,6 +102,16 @@ describe("resolveGuardRoles", () => {
     expect(MEMBERSHIP_GATED_ROLE_NAMES).not.toContain("OWNER");
     expect([...resolved().gatedRoles.values()]).not.toContain("OWNER");
   });
+
+  it("TRADING and GAMING are gated (Phase 5.2: they became access roles)", () => {
+    expect(MEMBERSHIP_GATED_ROLE_NAMES).toContain("TRADING");
+    expect(MEMBERSHIP_GATED_ROLE_NAMES).toContain("GAMING");
+  });
+
+  it("INNERCIRCLE is NOT gated (Phase 5.2: it became a pure cosmetic badge)", () => {
+    expect(MEMBERSHIP_GATED_ROLE_NAMES).not.toContain("INNERCIRCLE");
+    expect(BADGE_ROLE_NAMES).toContain("INNERCIRCLE");
+  });
 });
 
 describe("auditMembership -- flags violations", () => {
@@ -105,10 +120,28 @@ describe("auditMembership -- flags violations", () => {
     expect(v).toEqual([{ userId: "1", username: "alice", rolesHeldWithoutMember: ["F3NTM"] }]);
   });
 
+  it("flags TRADING held without MEMBER", () => {
+    const v = auditMembership([human("1", "alice", [ID.TRADING])], resolved());
+    expect(v).toEqual([{ userId: "1", username: "alice", rolesHeldWithoutMember: ["TRADING"] }]);
+  });
+
+  it("flags GAMING held without MEMBER", () => {
+    const v = auditMembership([human("1", "alice", [ID.GAMING])], resolved());
+    expect(v).toEqual([{ userId: "1", username: "alice", rolesHeldWithoutMember: ["GAMING"] }]);
+  });
+
+  it("flags COACH held without MEMBER", () => {
+    const v = auditMembership([human("1", "alice", [ID.COACH])], resolved());
+    expect(v).toEqual([{ userId: "1", username: "alice", rolesHeldWithoutMember: ["COACH"] }]);
+  });
+
   it("flags every gated role a human holds without MEMBER, not just the first", () => {
-    const v = auditMembership([human("1", "alice", [ID.BULLHAUS, ID.DVVV, ID.COACH])], resolved());
+    const v = auditMembership(
+      [human("1", "alice", [ID.BULLHAUS, ID.DVVV, ID.TRADING, ID.GAMING])],
+      resolved(),
+    );
     expect(v).toHaveLength(1);
-    expect(v[0]?.rolesHeldWithoutMember.sort()).toEqual(["BULLHAUS", "COACH", "DVVV"].sort());
+    expect(v[0]?.rolesHeldWithoutMember.sort()).toEqual(["BULLHAUS", "DVVV", "GAMING", "TRADING"].sort());
   });
 
   it("flags a scoped admin role held without MEMBER", () => {
@@ -130,6 +163,14 @@ describe("auditMembership -- does not flag", () => {
     expect(auditMembership([human("1", "alice", [ID.MEMBER, ID.BULLHAUS])], resolved())).toEqual([]);
   });
 
+  it("MEMBER + TRADING", () => {
+    expect(auditMembership([human("1", "alice", [ID.MEMBER, ID.TRADING])], resolved())).toEqual([]);
+  });
+
+  it("MEMBER + GAMING", () => {
+    expect(auditMembership([human("1", "alice", [ID.MEMBER, ID.GAMING])], resolved())).toEqual([]);
+  });
+
   it("a human holding MEMBER alone", () => {
     expect(auditMembership([human("1", "alice", [ID.MEMBER])], resolved())).toEqual([]);
   });
@@ -138,19 +179,23 @@ describe("auditMembership -- does not flag", () => {
     expect(auditMembership([human("1", "alice", [])], resolved())).toEqual([]);
   });
 
-  it("OWNER held without MEMBER (Section 7/62 exemption)", () => {
+  it("OWNER held without MEMBER (exempt)", () => {
     expect(auditMembership([human("1", "alice", [ID.OWNER])], resolved())).toEqual([]);
   });
 
-  it("every badge role (TRADING, GAMING, VIP) held without MEMBER", () => {
-    const v = auditMembership(
-      [human("1", "alice", [ID.TRADING, ID.GAMING, ID.VIP])],
-      resolved(),
-    );
-    expect(v).toEqual([]);
+  it("INNERCIRCLE held without MEMBER -- it is now a pure cosmetic badge", () => {
+    expect(auditMembership([human("1", "alice", [ID.INNERCIRCLE])], resolved())).toEqual([]);
   });
 
-  it("badge roles never appear in the gated set at all", () => {
+  it("VIP held without MEMBER -- cosmetic badge", () => {
+    expect(auditMembership([human("1", "alice", [ID.VIP])], resolved())).toEqual([]);
+  });
+
+  it("INNERCIRCLE and VIP together, still without MEMBER", () => {
+    expect(auditMembership([human("1", "alice", [ID.INNERCIRCLE, ID.VIP])], resolved())).toEqual([]);
+  });
+
+  it("every badge role never appears in the gated set at all", () => {
     for (const badge of BADGE_ROLE_NAMES) {
       expect(MEMBERSHIP_GATED_ROLE_NAMES).not.toContain(badge);
     }
