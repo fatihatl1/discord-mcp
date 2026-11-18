@@ -1,0 +1,52 @@
+name: BULLHAUS Community Membership Guard
+
+# Phase 5.1: Phase 5's internal Access-* layer is gone -- community roles
+# (F3NTM / BULLHAUS / DVVV / INNERCIRCLE / COACH / ADMIN-*) now key the
+# category overwrites directly, and "assigned only after MEMBER" is an
+# operational rule (an Admin assigns them by hand via a support ticket),
+# not a technical one a worker enforces. See src/community/membership_guard.ts
+# for why an automatic corrector is not deployed.
+#
+# This workflow is READ-ONLY: it only ever calls GET endpoints and logs any
+# human found holding a gated role without MEMBER, for a person to review.
+# There is no dry-run input because there is nothing to run dry.
+#
+# Deliberately a SEPARATE workflow from the Finnhub News Worker -- different
+# cadence and blast radius, sharing only the DISCORD_BOT_TOKEN secret.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bullhaus-community-membership-guard
+  cancel-in-progress: true
+
+jobs:
+  membership-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run membership guard (read-only)
+        env:
+          # Production credential, sourced only from GitHub repository
+          # secrets. The repo-local .env does not exist on the runner.
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: npm run membership-guard

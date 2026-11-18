@@ -21,8 +21,8 @@
     "start": "node dist/index.js",
     "news": "tsx src/news/cli.ts",
     "news:dry": "tsx src/news/cli.ts --offline",
-    "role-sync": "node dist/community/cli.js",
-    "role-sync:dev": "tsx src/community/cli.ts",
+    "membership-guard": "node dist/community/cli.js",
+    "membership-guard:dev": "tsx src/community/cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
