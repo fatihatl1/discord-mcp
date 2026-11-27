@@ -17,6 +17,10 @@
  * that: a role is gated exactly when holding it alone grants visibility
  * Discord cannot additionally condition on MEMBER.
  *
+ * Phase 5.5 adds CHOBAN: a second GAMING-equivalent community access role
+ * (same category/channel overwrites as GAMING, copied mechanically). It
+ * grants real visibility on its own, so it is gated the same way GAMING is.
+ *
  * MEMBERSHIP_GATED_ROLE_NAMES exists so a lightweight, READ-ONLY audit (see
  * membership_guard.ts) can flag the rare case where the operational rule
  * was not followed -- a human somehow holding a gated role without MEMBER --
@@ -42,6 +46,7 @@ export const MEMBERSHIP_GATED_ROLE_NAMES: readonly string[] = Object.freeze([
   "DVVV",
   "TRADING",
   "GAMING",
+  "CHOBAN",
   "COACH",
   "ADMIN-GLOBAL",
   "ADMIN-BULLHAUS",

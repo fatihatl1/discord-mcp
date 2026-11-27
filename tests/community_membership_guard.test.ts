@@ -10,6 +10,9 @@
  * Phase 5.2 moved TRADING and GAMING into the gated set (they became access
  * roles with real community visibility) and moved INNERCIRCLE out of it
  * (it became a pure cosmetic badge, alongside VIP).
+ *
+ * Phase 5.5 adds CHOBAN, a second GAMING-equivalent access role, to the
+ * gated set for the same reason GAMING is gated.
  */
 
 import { describe, expect, it } from "vitest";
@@ -38,6 +41,7 @@ const ID = {
   TRADING: "400000000000000012",
   GAMING: "400000000000000013",
   VIP: "400000000000000014",
+  CHOBAN: "400000000000000015",
 } as const;
 
 function role(name: keyof typeof ID, position: number): APIRole {
@@ -108,6 +112,11 @@ describe("resolveGuardRoles", () => {
     expect(MEMBERSHIP_GATED_ROLE_NAMES).toContain("GAMING");
   });
 
+  it("CHOBAN is gated (Phase 5.5: GAMING-equivalent access role)", () => {
+    expect(MEMBERSHIP_GATED_ROLE_NAMES).toContain("CHOBAN");
+    expect([...resolved().gatedRoles.values()]).toContain("CHOBAN");
+  });
+
   it("INNERCIRCLE is NOT gated (Phase 5.2: it became a pure cosmetic badge)", () => {
     expect(MEMBERSHIP_GATED_ROLE_NAMES).not.toContain("INNERCIRCLE");
     expect(BADGE_ROLE_NAMES).toContain("INNERCIRCLE");
@@ -128,6 +137,11 @@ describe("auditMembership -- flags violations", () => {
   it("flags GAMING held without MEMBER", () => {
     const v = auditMembership([human("1", "alice", [ID.GAMING])], resolved());
     expect(v).toEqual([{ userId: "1", username: "alice", rolesHeldWithoutMember: ["GAMING"] }]);
+  });
+
+  it("flags CHOBAN held without MEMBER", () => {
+    const v = auditMembership([human("1", "alice", [ID.CHOBAN])], resolved());
+    expect(v).toEqual([{ userId: "1", username: "alice", rolesHeldWithoutMember: ["CHOBAN"] }]);
   });
 
   it("flags COACH held without MEMBER", () => {
@@ -171,6 +185,10 @@ describe("auditMembership -- does not flag", () => {
     expect(auditMembership([human("1", "alice", [ID.MEMBER, ID.GAMING])], resolved())).toEqual([]);
   });
 
+  it("MEMBER + CHOBAN", () => {
+    expect(auditMembership([human("1", "alice", [ID.MEMBER, ID.CHOBAN])], resolved())).toEqual([]);
+  });
+
   it("a human holding MEMBER alone", () => {
     expect(auditMembership([human("1", "alice", [ID.MEMBER])], resolved())).toEqual([]);
   });
@@ -203,6 +221,11 @@ describe("auditMembership -- does not flag", () => {
 
   it("bot accounts, even ones that would otherwise violate", () => {
     const v = auditMembership([bot("9", "newsbot", [ID["ADMIN-GLOBAL"]])], resolved());
+    expect(v).toEqual([]);
+  });
+
+  it("a CHOBAN bot account is ignored, even without MEMBER", () => {
+    const v = auditMembership([bot("9", "chobanbot", [ID.CHOBAN])], resolved());
     expect(v).toEqual([]);
   });
 
