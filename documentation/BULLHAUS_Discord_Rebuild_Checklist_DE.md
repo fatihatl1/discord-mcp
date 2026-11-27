@@ -21,7 +21,7 @@ Begleitdokument zu `BULLHAUS_Discord_Technische_Dokumentation_DE.md` (dort stehe
 - [ ] `BULLHAUS AI`-Rolle über alle Rollen gezogen, die sie verwalten soll
 - [ ] Alle 26 Nicht-`@everyone`-Rollen angelegt (siehe Rolleninventar, Abschnitt 5 der Hauptdokumentation)
 - [ ] Alle Basisberechtigungen geprüft: nur `OWNER` hat `ADMINISTRATOR`
-- [ ] `CHOBAN` angelegt: Basisberechtigung `0`, Farbe `#EC4899`, Position idealerweise direkt unter `GAMING` (kosmetisch, ggf. manueller Owner-Schritt nötig — siehe Hauptdokumentation Abschnitt 6)
+- [ ] `CHOBAN` angelegt: Basisberechtigung `0`, Farbe `#15803D` (nach dem Owner-Farbtausch mit `F3NTM`; `F3NTM` trägt jetzt `#EC4899`), Position direkt unter `GAMING` und direkt über `MEMBER` (`TRADING > GAMING > CHOBAN > MEMBER` — kosmetisch, benötigt einen manuellen Owner-Schritt per Drag-and-Drop, da ein Bot nie eine Rolle an/über seiner eigenen Position verschieben darf; siehe Hauptdokumentation Abschnitt 6)
 - [ ] `MEMBERSHIP_GATED_ROLE_NAMES` in `src/community/roles.ts` enthält alle 11 gated Rollen inkl. `CHOBAN`
 
 ## Kategorien & Kanäle

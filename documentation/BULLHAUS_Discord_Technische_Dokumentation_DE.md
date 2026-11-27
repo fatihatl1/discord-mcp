@@ -111,12 +111,12 @@ BULLHAUS ist eine Trading- und Gaming-Community auf Discord, aufgebaut um ehrlic
 | Pos. | Kategorie (Anzeigename) | ID | Zweck | Zugriffsmodell |
 |---|---|---|---|---|
 | 0 | `✦═══・LOBBY・═══✦` | `1319601384521203723` | Erstkontakt: Willkommen, Regeln, Verifizierung | Für `@everyone` sichtbar (Lesen), Schreiben gesperrt außer Bot |
-| 1 | `✦═══・BOARD・═══✦` | `1319601403848560695` | Ankündigungen, Upgrade-Info, News-Kanäle | Für `@everyone` sichtbar (Lesen), Schreiben nur BULLHAUS AI |
+| 1 | `✦═══・BOARD・═══✦` | `1319601403848560695` | Ankündigungen, Upgrade-Info, News-Kanäle | Erfordert `MEMBER` (kein `@everyone`-`VIEW_CHANNEL` irgendwo in Kategorie oder Unterkanälen; die Kategorie-Hülle trägt selbst kein `MEMBER`-Overwrite — jeder Unterkanal gewährt `MEMBER` `VIEW_CHANNEL` individuell), Schreiben nur BULLHAUS AI |
 | 2 | `✦═══・LOUNGE・═══✦` | `1572410165339095132` | Allgemeiner Community-Bereich | Erfordert `MEMBER` |
 | 3 | `✦═══・GAMING FLOOR・═══✦` | `1572414147071578287` | Gaming-Community-Bereich | `MEMBER` + Zugriffsrolle (`GAMING`, `CHOBAN`, `F3NTM`, `BULLHAUS`), zusätzlich `COACH`, Scoped-Admins |
 | 4 | `✦═══・TRADING FLOOR・═══✦` | `1319604838996246538` | Trading-Community (EN) | `MEMBER` + Zugriffsrolle (`BULLHAUS`, `TRADING`), zusätzlich `COACH`, `ADMIN-BULLHAUS` |
 | 5 | `✦═══・TRADING FLOOR RU・═══✦` | `1572413604475441234` | Trading-Community (RU) | `MEMBER` + Zugriffsrolle (`TRADING`, `DVVV`), zusätzlich `COACH`, `ADMIN-RU` |
-| 6 | `✦═══・HELP DESK・═══✦` | `1319605754537312296` | Fragen, Vorschläge, Ticket-Einstieg | Breit sichtbar (auch vor Verifizierung, siehe Abschnitt 11) |
+| 6 | `✦═══・HELP DESK・═══✦` | `1319605754537312296` | Fragen, Vorschläge, Ticket-Einstieg | Erfordert `MEMBER` (live geprüft: `@everyone` ohne Rolle hat **kein** `VIEW_CHANNEL` auf Kategorie oder Unterkanälen — **nicht** vor Verifizierung sichtbar, siehe Abschnitt 11) |
 | 7 | `✦═══・OPENED TICKETS・═══✦` | `1319605815585538079` | Container für dynamisch erzeugte private Ticket-Kanäle | Nur `ADMIN-GLOBAL`, `BULLHAUS AI`, Ticket Tool pauschal; einzelne Ticket-Kanäle zusätzlich per Member-Overwrite |
 | 8 | `✦═══・STAFF・═══✦` | `1319605777287217172` | Interner Stab-Arbeitsbereich | `ADMIN-BULLHAUS`, `ADMIN-GAMING`, `ADMIN-RU`, `ADMIN-GLOBAL`, `BULLHAUS AI`, `SERVER BOTS` |
 | 9 | `✦═══・STATS・═══✦` | `1319601301625245717` | Live-Mitglieder-/Bot-Zähler (Voice-Kanalnamen als Anzeige) | `ADMIN-GLOBAL`; `COACH`/`VIP` explizit ausgeschlossen |
@@ -237,11 +237,11 @@ Keine statischen Unterkanäle. Ticket Tool erzeugt hier dynamisch private Kanäl
 
 **Live bestätigt** (aus den tatsächlich gepinnten Nachrichten, Autor durchgehend `BULLHAUS AI`). Original-Sprache unverändert übernommen (Englisch/Russisch bleiben im Original, nur die Dokumentation selbst ist Deutsch).
 
-**👋┃welcome:**
+**👋┃welcome:** (Nachrichten-ID `1575848620584869919`, Autor `BULLHAUS AI`, gepinnt, kein `edited`-Zeitstempel)
 > **Welcome to BULLHAUS.**
 > **Trading. Insights. Community.**
 >
-> Trading insights, livestreams and real experiences, shared honestly and connected through a growing community.
+> Whether you're here for trading, gaming, livestreams or simply to hang out with the community, BULLHAUS is a place to connect, exchange experiences and grow together.
 >
 > BULLHAUS grew out of my own trading journey. Over the past several years I have experienced progress, setbacks, good decisions, mistakes and the constant challenge of improving along the way.
 >
@@ -372,39 +372,41 @@ Keine statischen Unterkanäle. Ticket Tool erzeugt hier dynamisch private Kanäl
 
 ## 5. Vollständiges Rolleninventar
 
-**Live bestätigt**, 27 Rollen (inkl. `@everyone`), absteigend nach Position.
+**Live bestätigt**, 27 Rollen (inkl. `@everyone`), absteigend nach Position. CHOBAN wurde vom Owner manuell in die kosmetisch gewünschte Position (direkt unter `GAMING`, direkt über `MEMBER`) verschoben; dabei sind alle Rollen von `GAMING` aufwärts bis `OWNER` um je eine Position nach oben gerückt — die Tabelle unten ist die daraus resultierende vollständige, aktuelle Live-Reihenfolge. Farbwerte sind exakte Hex-Umrechnungen des rohen `color`-Dezimalwerts (keine Rundung/Näherung).
 
 | Pos. | Rolle | ID | Farbe (Hex) | Managed | Hoist | Mentionable | Basis-Berechtigungen (Rohbitfeld) | Gated durch Membership Guard | Klassifikation |
 |---|---|---|---|---|---|---|---|---|---|
-| 25 | OWNER | `1319685469650550904` | #5B0096* | nein | ja | nein | `8` → `ADMINISTRATOR` | nein (ausgenommen) | Mensch, höchste Instanz |
-| 24 | BULLHAUS AI | `1553380662738812958` | #349B5B* | **ja** (bot_id `1553378404252778577`) | nein | nein | `2269798679571600` → kein `ADMINISTRATOR`, u.a. `MANAGE_CHANNELS, MANAGE_ROLES, MANAGE_WEBHOOKS, MANAGE_THREADS, MANAGE_EVENTS, MANAGE_MESSAGES, VIEW_AUDIT_LOG, …` | nein | Bot, BULLHAUS-eigen |
-| 23 | ADMIN-GLOBAL | `1318670844267855892` | #7F2C9D* | nein | ja | nein | `4360657142546390` → kein `ADMINISTRATOR`, kein `MANAGE_GUILD`; u.a. `KICK_MEMBERS, BAN_MEMBERS, MANAGE_ROLES, MANAGE_CHANNELS, MODERATE_MEMBERS, MUTE/DEAFEN/MOVE_MEMBERS` | **ja** | Mensch, globaler Scoped-Admin |
-| 22 | Pandez Guard | `1319702010915852363` | — | ja (bot_id `967155551211491438`) | nein | nein | `275146730694` | nein | Bot, Vendor |
-| 21 | Dyno | `1319701549638881324` | — | ja (bot_id `155149108183695360`) | nein | nein | `1375077756038` | nein | Bot, Vendor |
-| 20 | Discohook Utils | `1319701338959118338` | — | ja (bot_id `792842038332358656`) | nein | nein | `395674250240` | nein | Bot, Vendor |
-| 19 | Upgrade.chat | `1322990318089539638` | — | ja (bot_id `543974987795791872`) | nein | nein | `277293943808` | nein | Bot, Vendor |
-| 18 | Booster | `1318983395312930858` | #F4652F* | ja (`premium_subscriber`-Tag) | ja | nein | `0` | nein | System (Discord-eigen) |
-| 17 | ADMIN-BULLHAUS | `1572408349780345015` | #8B38D2* | nein | ja | nein | `0` | **ja** | Mensch, Scoped-Admin (Trading EN) |
-| 16 | ADMIN-RU | `1572408352846118964` | #4C1B55* | nein | ja | nein | `0` | **ja** | Mensch, Scoped-Admin (Trading RU) |
-| 15 | ADMIN-GAMING | `1572408355408969770` | #1E360A* | nein | ja | nein | `0` | **ja** | Mensch, Scoped-Admin (Gaming) |
-| 14 | COACH | `1319717394519953479` | #924C0E* | nein | ja | nein | `1024` → `VIEW_CHANNEL` | **ja** | Mensch, funktionale Rolle |
-| 13 | VIP | `1503834949436964864` | #D4C037* | nein | ja | nein | `0` | nein (Badge) | Mensch, kosmetisches Abzeichen |
-| 12 | INNERCIRCLE | `1554229707589816401` | #5B2676* | nein | ja | nein | `0` | nein (Badge) | Mensch, kosmetisches Abzeichen |
-| 11 | DVVV | `1572408328427020388` | #1D493A* | nein | nein | nein | `0` | **ja** | Mensch, Community-Identität/Zugriff (RU) |
-| 10 | BULLHAUS | `1572408325688266823` | #0F7C6E* | nein | nein | nein | `0` | **ja** | Mensch, Community-Identität/Zugriff |
-| 9 | F3NTM | `1572408331232870460` | #15747D* | nein | nein | nein | `0` | **ja** | Mensch, Community-Identität/Zugriff (Gaming) |
-| 8 | TRADING | `1572408334043054230` | #38B6F8* | nein | nein | nein | `0` | **ja** | Mensch, Community-Zugriff (Trading EN+RU) |
-| 7 | GAMING | `1572408336295399428` | #A79D3A* | nein | nein | nein | `0` | **ja** | Mensch, Community-Zugriff (Gaming) |
-| 6 | MEMBER | `1319685925265211443` | #649A4B* | nein | ja | nein | `515466709569` → u.a. `SEND_MESSAGES, CONNECT, SPEAK, CREATE_INSTANT_INVITE, CHANGE_NICKNAME, …` (**kein** `VIEW_CHANNEL`) | nein (Basisrolle selbst) | Mensch, verifizierte Basisrolle |
+| 26 | OWNER | `1319685469650550904` | #5B0A16 | nein | ja | nein | `8` → `ADMINISTRATOR` | nein (ausgenommen) | Mensch, höchste Instanz |
+| 25 | BULLHAUS AI | `1553380662738812958` | #3498DB | **ja** (bot_id `1553378404252778577`) | nein | nein | `2269798679571600` → kein `ADMINISTRATOR`, u.a. `MANAGE_CHANNELS, MANAGE_ROLES, MANAGE_WEBHOOKS, MANAGE_THREADS, MANAGE_EVENTS, MANAGE_MESSAGES, VIEW_AUDIT_LOG, …` | nein | Bot, BULLHAUS-eigen |
+| 24 | ADMIN-GLOBAL | `1318670844267855892` | #7F1D1D | nein | ja | nein | `4360657142546390` → kein `ADMINISTRATOR`, kein `MANAGE_GUILD`; u.a. `KICK_MEMBERS, BAN_MEMBERS, MANAGE_ROLES, MANAGE_CHANNELS, MODERATE_MEMBERS, MUTE/DEAFEN/MOVE_MEMBERS` | **ja** | Mensch, globaler Scoped-Admin |
+| 23 | Pandez Guard | `1319702010915852363` | — | ja (bot_id `967155551211491438`) | nein | nein | `275146730694` | nein | Bot, Vendor |
+| 22 | Dyno | `1319701549638881324` | — | ja (bot_id `155149108183695360`) | nein | nein | `1375077756038` | nein | Bot, Vendor |
+| 21 | Discohook Utils | `1319701338959118338` | — | ja (bot_id `792842038332358656`) | nein | nein | `395674250240` | nein | Bot, Vendor |
+| 20 | Upgrade.chat | `1322990318089539638` | — | ja (bot_id `543974987795791872`) | nein | nein | `277293943808` | nein | Bot, Vendor |
+| 19 | Booster | `1318983395312930858` | #F47FFF | ja (`premium_subscriber`-Tag) | ja | nein | `0` | nein | System (Discord-eigen) |
+| 18 | ADMIN-BULLHAUS | `1572408349780345015` | #8B3A12 | nein | ja | nein | `0` | **ja** | Mensch, Scoped-Admin (Trading EN) |
+| 17 | ADMIN-RU | `1572408352846118964` | #4C1D95 | nein | ja | nein | `0` | **ja** | Mensch, Scoped-Admin (Trading RU) |
+| 16 | ADMIN-GAMING | `1572408355408969770` | #1E3A8A | nein | ja | nein | `0` | **ja** | Mensch, Scoped-Admin (Gaming) |
+| 15 | COACH | `1319717394519953479` | #92400E | nein | ja | nein | `1024` → `VIEW_CHANNEL` | **ja** | Mensch, funktionale Rolle |
+| 14 | VIP | `1503834949436964864` | #D4AF37 | nein | ja | nein | `0` | nein (Badge) | Mensch, kosmetisches Abzeichen |
+| 13 | INNERCIRCLE | `1554229707589816401` | #5B21B6 | nein | ja | nein | `0` | nein (Badge) | Mensch, kosmetisches Abzeichen |
+| 12 | DVVV | `1572408328427020388` | #1D4ED8 | nein | nein | nein | `0` | **ja** | Mensch, Community-Identität/Zugriff (RU) |
+| 11 | BULLHAUS | `1572408325688266823` | #0F766E | nein | nein | nein | `0` | **ja** | Mensch, Community-Identität/Zugriff |
+| 10 | F3NTM | `1572408331232870460` | **#EC4899** | nein | nein | nein | `0` | **ja** | Mensch, Community-Identität/Zugriff (Gaming) |
+| 9 | TRADING | `1572408334043054230` | #38BDF8 | nein | nein | nein | `0` | **ja** | Mensch, Community-Zugriff (Trading EN+RU) |
+| 8 | GAMING | `1572408336295399428` | #A78BFA | nein | nein | nein | `0` | **ja** | Mensch, Community-Zugriff (Gaming) |
+| 7 | **CHOBAN** | `1575829075988193285` | **#15803D** | nein | nein | nein | `0` | **ja** | Mensch, Community-Zugriff (Gaming-äquivalent) |
+| 6 | MEMBER | `1319685925265211443` | #64748B | nein | ja | nein | `515466709569` → u.a. `SEND_MESSAGES, CONNECT, SPEAK, CREATE_INSTANT_INVITE, CHANGE_NICKNAME, …` (**kein** `VIEW_CHANNEL`) | nein (Basisrolle selbst) | Mensch, verifizierte Basisrolle |
 | 5 | Beemo | `1319701028186361882` | — | ja (bot_id `515067662028636170`) | nein | nein | `1391569792070` | nein | Bot, Vendor |
 | 4 | InviteLogger | `1319701630949789698` | — | ja (bot_id `499595256270946326`) | nein | nein | `268462304` | nein | Bot, Vendor |
 | 3 | Ticket Tool | `1319701910571192372` | — | ja (bot_id `557628352828014614`) | nein | nein | `277830822928` | nein | Bot, Vendor |
 | 2 | ServerStats | `1319701986165133438` | — | ja (bot_id `458276816071950337`) | nein | nein | `1166352` | nein | Bot, Vendor |
-| 1 | SERVER BOTS | `1319688160296439838` | #E92063* | nein | ja | nein | `0` | nein | System/Infrastruktur |
-| 1 | **CHOBAN** | `1575829075988193285` | **#EC4899** | nein | nein | nein | `0` | **ja** | Mensch, Community-Zugriff (Gaming-äquivalent) |
+| 1 | SERVER BOTS | `1319688160296439838` | #E91E63 | nein | ja | nein | `0` | nein | System/Infrastruktur |
 | 0 | @everyone | `1307135789364154459` | — | nein | nein | nein | `322124731763520` → u.a. `SEND_MESSAGES, CONNECT, SPEAK, USE_APPLICATION_COMMANDS, …` (**kein** `VIEW_CHANNEL`, **kein** `ADMINISTRATOR`) | n/a | System (Discord-eigen) |
 
-*Farbwerte mit `*` sind aus dem rohen Dezimalwert zurückgerechnet; exakte Hex-Darstellung kann bei Bedarf gegen den Rohwert (`color`-Feld, Dezimal) im Discord-Client verifiziert werden. `CHOBAN`s Farbe ist exakt spezifiziert (#EC4899, Dezimal `15485081`) und live bestätigt — keine Kollision mit einer anderen Rolle.
+**Farb-Tausch (Owner-Aktion, live bestätigt):** `F3NTM` und `CHOBAN` wurden manuell farblich getauscht. `F3NTM` trägt jetzt den Farbwert, der bei der Erstellung ursprünglich für `CHOBAN` vorgesehen war (#EC4899, Dezimal `15485081`); `CHOBAN` trägt jetzt `F3NTM`s ursprünglichen Farbwert (#15803D, Dezimal `1409085`). Beide Werte wurden frisch gegen alle 25 übrigen Rollenfarben auf Kollision geprüft — keine Kollision in beide Richtungen.
+
+**`OWNER`-Halter (Live bestätigt):** Aktuell halten zwei menschliche Accounts die Rolle `OWNER` (beide zusätzlich mit `MEMBER`). Dies wird hier als Tatsache dokumentiert; ob dies zwei legitime gleichberechtigte Eigentümer-Accounts oder ein zusätzlicher Test-/Alt-Account ist, wurde nicht erfragt und ist hier nicht bewertet — siehe Abschnitt 30, „Ownership & Access Migration".
 
 **Gated-/Badge-Klassifikation (Repository-bestätigt, `src/community/roles.ts`):**
 - `MEMBERSHIP_GATED_ROLE_NAMES` (11): `F3NTM, BULLHAUS, DVVV, TRADING, GAMING, CHOBAN, COACH, ADMIN-GLOBAL, ADMIN-BULLHAUS, ADMIN-RU, ADMIN-GAMING`.
@@ -420,34 +422,36 @@ Keine statischen Unterkanäle. Ticket Tool erzeugt hier dynamisch private Kanäl
 **Live bestätigt**, höchste zu niedrigste Position:
 
 ```
-OWNER (25)
-  └─ BULLHAUS AI (24)            ← eigene Bot-Rolle, muss über allem stehen, das sie verwaltet
-       └─ ADMIN-GLOBAL (23)
-            └─ Pandez Guard (22) [managed]
-                 └─ Dyno (21) [managed]
-                      └─ Discohook Utils (20) [managed]
-                           └─ Upgrade.chat (19) [managed]
-                                └─ Booster (18) [managed, premium_subscriber]
-                                     └─ ADMIN-BULLHAUS (17)
-                                          └─ ADMIN-RU (16)
-                                               └─ ADMIN-GAMING (15)
-                                                    └─ COACH (14)
-                                                         └─ VIP (13)
-                                                              └─ INNERCIRCLE (12)
-                                                                   └─ DVVV (11)
-                                                                        └─ BULLHAUS (10)
-                                                                             └─ F3NTM (9)
-                                                                                  └─ TRADING (8)
-                                                                                       └─ GAMING (7)
-                                                                                            └─ MEMBER (6)
-                                                                                                 └─ Beemo (5) [managed]
-                                                                                                      └─ InviteLogger (4) [managed]
-                                                                                                           └─ Ticket Tool (3) [managed]
-                                                                                                                └─ ServerStats (2) [managed]
-                                                                                                                     └─ SERVER BOTS (1)
-                                                                                                                     └─ CHOBAN (1)   ← siehe Hinweis unten
-                                                                                                                          └─ @everyone (0, fix)
+OWNER (26)
+  └─ BULLHAUS AI (25)            ← eigene Bot-Rolle, muss über allem stehen, das sie verwaltet
+       └─ ADMIN-GLOBAL (24)
+            └─ Pandez Guard (23) [managed]
+                 └─ Dyno (22) [managed]
+                      └─ Discohook Utils (21) [managed]
+                           └─ Upgrade.chat (20) [managed]
+                                └─ Booster (19) [managed, premium_subscriber]
+                                     └─ ADMIN-BULLHAUS (18)
+                                          └─ ADMIN-RU (17)
+                                               └─ ADMIN-GAMING (16)
+                                                    └─ COACH (15)
+                                                         └─ VIP (14)
+                                                              └─ INNERCIRCLE (13)
+                                                                   └─ DVVV (12)
+                                                                        └─ BULLHAUS (11)
+                                                                             └─ F3NTM (10)
+                                                                                  └─ TRADING (9)
+                                                                                       └─ GAMING (8)
+                                                                                            └─ CHOBAN (7)
+                                                                                                 └─ MEMBER (6)
+                                                                                                      └─ Beemo (5) [managed]
+                                                                                                           └─ InviteLogger (4) [managed]
+                                                                                                                └─ Ticket Tool (3) [managed]
+                                                                                                                     └─ ServerStats (2) [managed]
+                                                                                                                          └─ SERVER BOTS (1)
+                                                                                                                               └─ @everyone (0, fix)
 ```
+
+`CHOBAN` sitzt damit genau an der kosmetisch gewünschten Stelle: direkt unter `GAMING`, direkt über `MEMBER` (`TRADING(9) > GAMING(8) > CHOBAN(7) > MEMBER(6)`, live bestätigt). Das Einfügen erforderte, dass der Owner persönlich alle 19 Rollen von `GAMING` bis `OWNER` je eine Position nach oben verschob — ein Bot kann das nicht selbst, da er nie eine Rolle an oder über seiner eigenen Position bewegen darf (das betrifft hier `BULLHAUS AI` und `OWNER` direkt). Der Owner-Account steht über jeder Rolle, daher konnte Discord beim manuellen Verschieben `BULLHAUS AI`/`OWNER` automatisch mit anheben.
 
 **Warum die Hierarchie zählt:**
 - `OWNER` muss immer über `BULLHAUS AI` stehen — ein Bot kann nie eine Rolle an oder über seiner eigenen Position verwalten; der Discord-Account-Eigentümer muss jederzeit uneingeschränkte Notfallkontrolle behalten.
@@ -455,9 +459,7 @@ OWNER (25)
 - Gemanagte Rollen (`Pandez Guard, Dyno, Discohook Utils, Upgrade.chat, Beemo, InviteLogger, Ticket Tool, ServerStats, Booster`) werden positionsmäßig von Discord bei der Bot-Installation automatisch eingefügt; ihre Position sollte nicht manuell gegen die Vendor-Erwartung verschoben werden.
 - Ein Bot darf laut Discord-API niemals eine Rolle an oder über seiner eigenen höchsten Rolle verschieben — das gilt auch für die eigene Rolle selbst.
 
-**Bekannter aktueller Sonderfall — `CHOBAN`s Position:** `CHOBAN` liegt aktuell auf Position `1` (knapp über `@everyone`, zahlenmäßig gleichauf mit `SERVER BOTS`). Die kosmetisch gewünschte Platzierung ist direkt unter `GAMING` und direkt über `MEMBER`. Das lässt sich nicht per Bot-Schreibzugriff herstellen: Die Rollenhierarchie ist zwischen Position 0 (`@everyone`, fix) und Position 25 (`OWNER`) lückenlos belegt; eine Einfügung an der gewünschten Stelle würde erzwingen, dass auch `BULLHAUS AI` und `OWNER` eine Position höher rutschen — und ein Bot darf nie eine Rolle an oder über seiner eigenen Position verschieben, auch nicht implizit die eigene Rolle. Das ist exakt dieselbe Einschränkung, die beim ursprünglichen Einfügen von `GAMING`/`TRADING` in diese Hierarchie bereits aufgetreten ist.
-**Funktionale Auswirkung: keine.** Der Berechtigungsrechner (`computeEffectivePermissions`) berücksichtigt Rollenposition nie — Zugriff wird ausschließlich über Kategorie-/Kanal-Overwrites bestimmt. `CHOBAN`s Basisberechtigung ist `0`, daher hat die Position auch keine `MANAGE_ROLES`-Hierarchiebedeutung.
-**Ausstehender manueller Schritt (nur kosmetisch, nur durch den Owner):** In Discord unter Server-Einstellungen → Rollen `CHOBAN` per Drag-and-Drop direkt unter `GAMING` ziehen. Der Owner-Account steht über jeder Rolle, Discord verschiebt `BULLHAUS AI`/`OWNER` dabei automatisch mit.
+**Hinweis zur `CHOBAN`-Position (abgeschlossen):** Der Berechtigungsrechner (`computeEffectivePermissions`) berücksichtigt Rollenposition ohnehin nie — Zugriff wird ausschließlich über Kategorie-/Kanal-Overwrites bestimmt, `CHOBAN`s Basisberechtigung ist `0`. Die Position hat damit nie eine Sicherheits- oder `MANAGE_ROLES`-Hierarchiebedeutung gehabt; dass sie inzwischen auch kosmetisch korrekt sitzt, ist ein zusätzlicher, vom Owner manuell durchgeführter Schritt, kein funktionales Erfordernis.
 
 ---
 
@@ -485,7 +487,7 @@ OWNER (25)
 
 **Fußnoten / Nuancen (Live bestätigt):**
 - Alle Werte sind additiv zur `MEMBER`-Basis zu lesen (jede Zeile außer `MEMBER` selbst geht von `MEMBER + Rolle` aus — Discord-Berechtigungen sind additiv, eine Person hält praktisch immer `MEMBER` zusätzlich zu ihrer Zugriffsrolle).
-- `LOBBY`, `BOARD` und `HELP DESK` sind in der Praxis bereits für `@everyone` (auch unverifizierte Nutzer) lesbar — nötig, damit Regeln/Verifizierung/Ticket-Eröffnung vor `MEMBER` funktionieren (siehe Abschnitt 11). `LOUNGE` ist dagegen strikt an `MEMBER` gebunden.
+- **Nur `LOBBY`** ist für `@everyone` (unverifizierte Nutzer, keine Rolle außer `@everyone`) lesbar — live geprüft mit leerer Rollenmenge: `LOBBY` sichtbar, `BOARD`, `LOUNGE`, `HELP DESK`, `GAMING FLOOR`, `TRADING FLOOR`, `TRADING FLOOR RU`, `STAFF`, `STATS`, `LOGS`, `BOTS`, `OPENED TICKETS` alle **nicht** sichtbar. `BOARD` und `HELP DESK` benötigen `MEMBER` genau wie `LOUNGE` — ihre Kategorie-Hülle trägt kein `@everyone`-`VIEW_CHANNEL`, und keiner ihrer Unterkanäle gewährt `@everyone` `VIEW_CHANNEL` (siehe Abschnitt 2 und Abschnitt 11). Lediglich `LOBBY`s drei Kanäle (`welcome`, `rules-and-disclaimer`, `verify-here`) gewähren `@everyone` explizit `VIEW_CHANNEL` — das genügt, damit ein unverifizierter Nutzer die Regeln lesen und verifizieren kann, bevor `MEMBER` existiert.
 - `ADMIN-BULLHAUS`✓* auf TRADING FLOOR: zusätzlich `MUTE_MEMBERS, DEAFEN_MEMBERS, MOVE_MEMBERS` auf den Voice-Kanälen der Kategorie (Scoped-Voice-Moderation).
 - `ADMIN-RU`✓* auf TRADING FLOOR RU: gleiches Muster, RU-Voice-Kanäle.
 - `ADMIN-GAMING`✓* auf GAMING FLOOR: gleiches Muster, Gaming-Voice-Kanäle.
@@ -518,12 +520,13 @@ OWNER (25)
 
 | Kanal | Wer sieht | Wer schreibt | Wer moderiert | Automatisch bespielt |
 |---|---|---|---|---|
-| LOBBY/BOARD-Kanäle | `@everyone` (auch unverifiziert) | nur `BULLHAUS AI` (Ankündigungen/News) | `ADMIN-GLOBAL` | News-Kanäle: News Worker (Finnhub) |
+| LOBBY-Kanäle (welcome, rules-and-disclaimer, verify-here) | `@everyone` (auch unverifiziert) | nur `BULLHAUS AI` | `ADMIN-GLOBAL` | Nein |
+| BOARD-Kanäle (announcements, trading-news, forex-news, crypto-news, upgrade) | `MEMBER` (live geprüft: **kein** `@everyone`-`VIEW_CHANNEL`, trotz des Kategorienamens nicht vor Verifizierung sichtbar) | nur `BULLHAUS AI` (Ankündigungen/News) | `ADMIN-GLOBAL` | News-Kanäle: News Worker (Finnhub) |
 | 🐂┃bullhaus-insights | `MEMBER`+`BULLHAUS`/`TRADING`/`GAMING`-Trading-Pfad (TRADING FLOOR) | nur `BULLHAUS AI` (read-only für Mitglieder, kein explizites `SEND_MESSAGES`-Grant an Community-Rollen über die reine Kategoriesicht hinaus) | `ADMIN-BULLHAUS`, `ADMIN-GLOBAL` | Nein, manuell durch BULLHAUS |
 | 👤┃diyorovvvh-insights | `MEMBER`+`TRADING`/`DVVV`/`ADMIN-RU` (TRADING FLOOR RU) | nur `BULLHAUS AI` (read-only-Charakter) | `ADMIN-RU`, `ADMIN-GLOBAL` | Nein, manuell |
 | 📂┃resources-and-tools | `MEMBER`+`BULLHAUS`/`TRADING` (TRADING FLOOR) | Community-Mitglieder mit TRADING-FLOOR-Zugriff | `ADMIN-BULLHAUS`, `ADMIN-GLOBAL` | Nein |
 | Community-Chats (open-chat, general-chat×3) | je nach Kategorie-Zugriff | je nach Kategorie-Zugriff (Standard-Chat-Rechte aus `MEMBER`-Basis) | zuständige Scoped-Admins + `ADMIN-GLOBAL` | Nein |
-| 📰┃trading-news / forex-news / crypto-news | `@everyone` | nur `BULLHAUS AI` | `ADMIN-GLOBAL` | **Ja** — News Worker, produktiv aktiv (siehe Abschnitt 19) |
+| 📰┃trading-news / forex-news / crypto-news | `MEMBER` (+ `INNERCIRCLE`, read-only; **kein** `@everyone`-Zugriff) | nur `BULLHAUS AI` | `ADMIN-GLOBAL` | **Ja** — News Worker, produktiv aktiv (siehe Abschnitt 19) |
 | 🔑┃staff-chat, 🔍┃mod-logs, 🤖┃bot-setup, 📩┃subscription-logs (STAFF) | Scoped-Admins + `ADMIN-GLOBAL` + `BULLHAUS AI` + `SERVER BOTS` | dieselbe Gruppe | `ADMIN-GLOBAL` | Nein |
 | ⛔┃*-logs (LOGS) | nur `ADMIN-GLOBAL` (lesend, `SEND_MESSAGES` explizit verweigert) + `BULLHAUS AI` | **niemand aus der Community** — nur Dyno via Webhook | `ADMIN-GLOBAL` (lesend) | **Ja** — Dyno-Webhooks (siehe Abschnitt 18) |
 
@@ -556,7 +559,7 @@ OWNER (25)
 **Live bestätigt + Repository-bestätigt (zusammengesetzt aus Kanalstruktur, Pinned-Texten und `membership_guard.ts`):**
 
 1. **Beitritt.** Ein neuer Nutzer tritt der Guild bei und erhält zunächst keine Rolle außer `@everyone`.
-2. **Unverifizierter Zustand.** `@everyone` kann `LOBBY`, `BOARD` und `HELP DESK` lesen (nicht aber `LOUNGE` oder die Floor-Kategorien) — ausreichend, um sich zu orientieren, Regeln zu lesen und Hilfe zu finden, ohne bereits Mitglied zu sein.
+2. **Unverifizierter Zustand.** `@everyone` sieht **ausschließlich `LOBBY`** (live geprüft mit leerer Rollenmenge: `welcome`, `rules-and-disclaimer`, `verify-here` sichtbar; `BOARD`, `LOUNGE`, `HELP DESK` und alle übrigen Kategorien nicht) — das reicht genau aus, um sich zu orientieren, die Regeln zu lesen und zu verifizieren. `BOARD`, `LOUNGE` und `HELP DESK` werden erst mit `MEMBER` sichtbar (siehe Schritt 5).
 3. **Regeln lesen** in `📜┃rules-and-disclaimer`.
 4. **Verifizierung** über `✅┃verify-here` (der genaue technische Verifizierungsmechanismus — Reaction-Role, externer Verify-Bot, Captcha o. Ä. — ist **nicht aktuell belegt**; weder Repository noch Live-Overwrites zeigen einen dedizierten Verifizierungsbot für diesen Kanal. Falls hierfür ein separates Tool im Einsatz ist, gehört es in die Vendor-Konfigurationssicherung, siehe Abschnitt 30).
 5. **`MEMBER` wird zugewiesen** (Mechanismus der Zuweisung selbst ebenfalls **nicht aktuell belegt** — ob manuell durch einen Admin oder automatisiert durch ein Verify-Tool).
